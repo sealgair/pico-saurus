@@ -47,7 +47,11 @@ end
 function _draw()
  rectfill(0,0,127,127,12)
  rectfill(0,119,127,127,3)
- 
+ color(0)
+ print("masiakasaurus knopfleri", 20,8)
+ color(2)
+ print("mark knopfler's", 24,15)
+  
  local s=0
  if j==-1 then
   s=frames.crouch
