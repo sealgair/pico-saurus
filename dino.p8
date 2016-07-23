@@ -64,9 +64,9 @@ end
 
 function actor:move()
 	self.x=wrap(
-	 self.x,self.vel.x,127,-16)
+	 self.x,self.vel.x,127)
 	self.y=wrap(
-	 self.y,self.vel.y,127,-16)
+	 self.y,self.vel.y,127)
 
 	if self.vel.x==0 then
 		self.wfp=0
@@ -94,12 +94,27 @@ function actor:sprite()
 end
 
 function actor:draw()
-	spr(
-	 self:sprite(),
-		self.x, self.y,
-		self.w, self.h,
-		self.flipped
-	)
+	local coords={
+		{x=self.x,y=self.y}
+	}
+	if self.x>127-(8*self.w) then
+		add(coords,
+		 {x=self.x-127,y=self.y}
+		)
+	end
+	if self.y>127-(8*self.y) then
+		add(coords,
+		 {x=self.y,y=self.y-127}
+		)
+	end
+	for coord in all(coords) do
+		spr(
+		 self:sprite(),
+			coord.x, coord.y,
+			self.w, self.h,
+			self.flipped
+		)
+	end
 end
 
 --------------------------------
