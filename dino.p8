@@ -1,25 +1,130 @@
 pico-8 cartridge // http://www.pico-8.com
 version 8
 __lua__
-x=32 y=112
-frames={
-	stand=64,
- walk={80,64,96,64},
- crouch=66,
- jump={u=82,d=98}
+--------------------------------
+-- utilities
+--------------------------------
+
+-- micro class type
+function class(base, proto)
+	proto = proto or {}
+	proto.__index = proto
+	-- todo could save a few tokens by making classes callable
+	local meta = {}
+	setmetatable(proto, meta)
+	if base then
+		meta.__index = base
+	end
+	function meta:__call(...)
+		local this = setmetatable({}, self)
+		if this.init then
+			this:init(...)
+		end
+		return this
+	end
+	return proto
+end
+
+-- print with color
+function cprint(msg, c)
+ color(c)
+	print(msg)
+end
+
+function wrap(start, add, max, min)
+ min=min or 0
+	local v=max-min
+	local r=start+add
+	if r>max then
+		r-=v
+	elseif r<min then
+		r+=v
+	end
+	return r
+end
+
+--------------------------------
+-- actor class
+--------------------------------
+actor = class{
+ __name="actor",
+	vel={x=0,y=0},
+	flipped=false
 }
-l=false m=false a=1
-j=0
-jh=16
-spd=2
+
+function actor:init(x,y,opts)
+ self.x=x
+ self.y=y
+ self.sprites=opts.sprites
+	self.w=opts.w or 1
+	self.h=opts.h or 1
+	self.wfp=0 --current pixel of walking animation
+	self.wfd=8 --number of pixels per frame of walking animation
+end
+
+function actor:move()
+	self.x=wrap(
+	 self.x,self.vel.x,127,-16)
+	self.y=wrap(
+	 self.y,self.vel.y,127,-16)
+
+	if self.vel.x==0 then
+		self.wfp=0
+	else
+		self.flipped=self.vel.x<0
+		self.wfp=wrap(
+		 self.wfp,
+			abs(self.vel.x),
+			self.wfd*#self.sprites.walk-1
+		)
+	end
+end
+
+function actor:sprite()
+	local s=self.sprites.stand
+ if self.vel.y>1 then
+		s=self.sprites.jump.u
+	elseif self.vel.y<0 then
+		s=self.sprites.jump.u
+	elseif self.vel.x!=0 then
+		local wf=flr(self.wfp/self.wfd)+1
+  s=self.sprites.walk[wf]
+	end
+	return s
+end
+
+function actor:draw()
+	spr(
+	 self:sprite(),
+		self.x, self.y,
+		self.w, self.h,
+		self.flipped
+	)
+end
+
+--------------------------------
+-- the game
+--------------------------------
 
 -- states:
 -- 0: initial
 -- 1: playing
 gamestate=0
 
+actors = {}
+
 function _init()
  music(0)
+ player=actor(32, 112, {
+		sprites={
+	 	stand=64,
+	  walk={80,64,96,64},
+	  crouch=66,
+	  jump={u=82,d=98}
+	 },
+		w=2
+	})
+	add(actors, player)
 end
 
 function _update()
@@ -31,69 +136,35 @@ function _update()
   end
 	end
 
- local up=btn(2)
- if up and j==0 then
- 	j=-1
- elseif not up and j==-1 then
-  j=16
- elseif j>0 then
-  j-=1
- end
- 
- if up then --sit
- elseif btn(0) then 
- 	x-=spd
- 	l=true
- 	m=true 
- elseif btn(1) then 
- 	x+=spd
- 	l=false
- 	m=true
+ if btn(0) then
+  player.vel.x=-2
+ elseif btn(1) then
+		player.vel.x=2
  else
-  m=false
+		player.vel.x=0
  end
- if x<-16 then x=127 end
- if x>127 then x=-16 end
- if m then
-  a+=.333
-  if a > #frames.walk+1 then a=1 end
- else
-  a=1
- end
+
+	for a in all(actors) do
+		a:move()
+	end
 end
 
 function _draw()
  rectfill(0,0,127,127,12)
  map(0,0, 0,0, 16,16)
- 
+
  if gamestate == 0 then
- rectfill(15,15,112,44,5)
- cursor(19,19)
- color(7)
- print("masiakasaurus knopfleri")
- color(13)
- print("   mark knopfler's")
- color(9)
- print("   vicious lizard")
- color(0)
- print("   x or z to start")
+	 rectfill(15,15,112,44,5)
+	 cursor(19,19)
+	 cprint("masiakasaurus knopfleri", 7)
+	 cprint("   mark knopfler's     ", 13)
+	 cprint("   vicious lizard      ", 9)
+	 cprint("   x or z to start     ", 0)
  end
-  
- local s=frames.stand
- if j==-1 then
-  s=frames.crouch
- elseif j>jh/2 then
-  s=frames.jump.u
- elseif j>0 then
-  s=frames.jump.d
- elseif m then
-  s=frames.walk[flr(a)]
- end
- local h=y
- if j>0 then
-  h-=2*(16-(4-j/2)^2)
- end
- spr(s,x,h,2,1,l,false)
+
+	for a in all(actors) do
+		a:draw()
+	end
 end
 __gfx__
 70000007333303331111111c00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
@@ -390,4 +461,3 @@ __music__
 00 41424344
 00 41424344
 00 41424344
-
