@@ -132,6 +132,7 @@ function actor:move()
 			break
 		end
 	end
+ self.x=newx
 
 	--check for map collisions (y)
 	local dy=-1
@@ -145,8 +146,6 @@ function actor:move()
 			break
 		end
 	end
-
- self.x=newx
 	self.y=newy
 end
 
