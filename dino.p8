@@ -108,7 +108,6 @@ function actor:move()
 	if self.vel.x==0 then
 		self.wfp=0
 	else
-		self.flipped=self.vel.x<0
 		self.wfp=wrap(
 		 self.wfp,
 			abs(self.vel.x*dt),
@@ -191,23 +190,41 @@ player = class(actor, {
 	jump=200,
 	btn={
 		j=2, l=0, r=1
-	}
+	},
+	j=false,
 })
 
+function player:sprite()
+	if btn(self.btn.l) then
+		self.flipped = true
+	elseif btn(self.btn.r) then
+		self.flipped = false
+	end
+	if self.j then
+		return self.sprites.crouch
+	else
+		return actor.sprite(self)
+	end
+end
+
 function player:move()
-	if btnp(self.btn.j) and self.vel.y==0 then
+	if btn(self.btn.j) then
+		self.j=true
+	elseif self.j then
+		self.j=false
 		player.vel.y-=self.jump
 	end
- if btn(self.btn.l) then
+
+ if btn(self.btn.l) and not self.j then
   player.vel.x-=self.run.a*dt
 		player.vel.x=max(player.vel.x,-self.run.m)
- elseif btn(self.btn.r) then
+ elseif btn(self.btn.r) and not self.j then
 		player.vel.x+=self.run.a*dt
 		player.vel.x=min(player.vel.x,self.run.m)
- elseif player.vel.x != 0 then
+ elseif player.vel.x!=0 then
 		local s=sign(player.vel.x)
 		player.vel.x+=-s*self.run.a*dt
-		if sign(player.vel.x) != s then
+		if sign(player.vel.x)!=s then
 			player.vel.x=0
 		end
  end
