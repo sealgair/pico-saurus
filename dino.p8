@@ -185,6 +185,36 @@ function actor:draw()
 	end
 end
 
+player = class(actor, {
+	__name="player",
+	run={a=600, m=100},
+	jump=200,
+	btn={
+		j=2, l=0, r=1
+	}
+})
+
+function player:move()
+	if btnp(self.btn.j) and self.vel.y==0 then
+		player.vel.y-=self.jump
+	end
+ if btn(self.btn.l) then
+  player.vel.x-=self.run.a*dt
+		player.vel.x=max(player.vel.x,-self.run.m)
+ elseif btn(self.btn.r) then
+		player.vel.x+=self.run.a*dt
+		player.vel.x=min(player.vel.x,self.run.m)
+ elseif player.vel.x != 0 then
+		local s=sign(player.vel.x)
+		player.vel.x+=-s*self.run.a*dt
+		if sign(player.vel.x) != s then
+			player.vel.x=0
+		end
+ end
+
+	actor.move(self)
+end
+
 --------------------------------
 -- the game
 --------------------------------
@@ -198,7 +228,7 @@ actors = {}
 
 function _init()
  music(0)
- player=actor(32, 112, {
+ player=player(32, 112, {
 		sprites={
 	 	stand=64,
 	  walk={80,64,96,64},
@@ -218,17 +248,6 @@ function _update60()
    return
   end
 	end
-
-	if btnp(2) and player.vel.y==0 then
-		player.vel.y-=200
-	end
- if btn(0) then
-  player.vel.x=-100
- elseif btn(1) then
-		player.vel.x=100
- else
-		player.vel.x=0
- end
 
 	for a in all(actors) do
 		a:move()
