@@ -8,7 +8,8 @@ __lua__
 sflags={
  sm=0 -- solid map
 }
-dt=1/30
+dt=1/60
+g=9.8*60
 
 -- micro class type
 function class(base, proto)
@@ -83,7 +84,7 @@ end
 actor = class{
  __name="actor",
 	vel={x=0,y=0},
-	acc={x=0,y=9.8},
+	acc={x=0,y=0},
 	flipped=false,
 }
 
@@ -101,6 +102,7 @@ function actor:move()
  --accelerate
 	self.vel.x += self.acc.x*dt
 	self.vel.y += self.acc.y*dt
+	self.vel.y += g*dt
 
 	--upgade graphical stuff :p
 	if self.vel.x==0 then
@@ -109,16 +111,16 @@ function actor:move()
 		self.flipped=self.vel.x<0
 		self.wfp=wrap(
 		 self.wfp,
-			abs(self.vel.x),
+			abs(self.vel.x*dt),
 			self.wfd*#self.sprites.walk-1
 		)
 	end
 
 	--update coords
 	local newx=wrap(
-	 self.x,self.vel.x,127)
+	 self.x,self.vel.x*dt,127)
 	local newy=wrap(
-	 self.y,self.vel.y,127)
+	 self.y,self.vel.y*dt,127)
 
 	--check for map collisions (x)
  local dx=-1
@@ -208,7 +210,7 @@ function _init()
 	add(actors, player)
 end
 
-function _update()
+function _update60()
 	if gamestate == 0 then
 	 if btnp(4) or btnp(5) then
    gamestate=1
@@ -218,12 +220,12 @@ function _update()
 	end
 
 	if btnp(2) and player.vel.y==0 then
-		player.vel.y-=5
+		player.vel.y-=200
 	end
  if btn(0) then
-  player.vel.x=-2
+  player.vel.x=-100
  elseif btn(1) then
-		player.vel.x=2
+		player.vel.x=100
  else
 		player.vel.x=0
  end
