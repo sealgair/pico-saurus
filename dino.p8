@@ -86,6 +86,7 @@ actor = class{
 	vel={x=0,y=0},
 	acc={x=0,y=0},
 	flipped=false,
+	grounded=false,
 }
 
 function actor:init(x,y,opts)
@@ -135,8 +136,10 @@ function actor:move()
 	--check for map collisions (y)
 	local dy=-1
 	if (self.vel.y>0) dy=self.h*8-1
+	self.grounded=false
 	for y=self.y,newy,sign(self.vel.y) do
 		if collides(self.x, y+dy, self.w*8-1, 1) then
+			self.grounded=true
 			newy=y
 			self.vel.y=0
 			break
@@ -187,20 +190,19 @@ end
 player = class(actor, {
 	__name="player",
 	run={a=600, m=100},
-	jump=200,
-	btn={
-		j=2, l=0, r=1
-	},
-	j=false,
+	jump=100,
+	btn={j=2,l=0,r=1},
+	j=0,
+	jd=dt*4, --0-1 in 1/4 seconds
 })
 
 function player:sprite()
 	if btn(self.btn.l) then
-		self.flipped = true
+		self.flipped=true
 	elseif btn(self.btn.r) then
-		self.flipped = false
+		self.flipped=false
 	end
-	if self.j then
+	if self.j>0 then
 		return self.sprites.crouch
 	else
 		return actor.sprite(self)
@@ -208,17 +210,17 @@ function player:sprite()
 end
 
 function player:move()
-	if btn(self.btn.j) then
-		self.j=true
-	elseif self.j then
-		self.j=false
-		player.vel.y-=self.jump
+	if btn(self.btn.j) and self.grounded then
+		self.j=min(self.j+self.jd,1)
+	elseif self.j>0 then
+		player.vel.y-=self.jump*(1+self.j)
+			self.j=0
 	end
 
- if btn(self.btn.l) and not self.j then
+ if btn(self.btn.l) and self.j<=0 then
   player.vel.x-=self.run.a*dt
 		player.vel.x=max(player.vel.x,-self.run.m)
- elseif btn(self.btn.r) and not self.j then
+ elseif btn(self.btn.r) and self.j<=0 then
 		player.vel.x+=self.run.a*dt
 		player.vel.x=min(player.vel.x,self.run.m)
  elseif player.vel.x!=0 then
