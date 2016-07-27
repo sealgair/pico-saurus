@@ -11,6 +11,21 @@ sflags={
 dt=1/60
 g=9.8*60
 
+debuglog={}
+function debug(msg)
+	add(debuglog, msg)
+	while #debuglog > 8 do
+		del(debuglog, debuglog[1])
+	end
+end
+function drawdebug()
+	color(0)
+	cursor(16,32)
+	for msg in all(debuglog) do
+		print(msg)
+	end
+end
+
 -- micro class type
 function class(base, proto)
 	proto = proto or {}
@@ -224,6 +239,112 @@ function player:move()
 end
 
 --------------------------------
+-- the world
+--------------------------------
+world={
+	screens={
+		w=2,h=2,
+		x=0,y=0,
+		d={x=0,y=0},
+	},
+ tiles={
+		w=16,h=16,
+		d={x=0,y=0},
+	},
+	pixels={
+		w=8,h=8,
+	},
+	actors={},
+}
+
+function world:tilebox()
+	return {
+		x=self.screens.x*self.tiles.w+self.tiles.d.x,
+		y=self.screens.y*self.tiles.h+self.tiles.d.y,
+		w=self.tiles.w,
+		h=self.tiles.h,
+	}
+end
+
+function world:pixelorigin()
+	local b=self:tilebox()
+ return {
+		x=b.x*self.pixels.w,
+		y=b.y*self.pixels.h,
+	}
+end
+
+function world:spawn(actor)
+	add(self.actors, actor)
+end
+
+function world:checkbounds(p)
+ local o=self:pixelorigin()
+	local w=self.tiles.w*self.pixels.w
+	local h=self.tiles.h*self.pixels.h
+	local b={
+		l=o.x,
+		r=o.x+w,
+  t=o.y,
+		b=o.y+h,
+	}
+	local res={x=0,y=0}
+	if p.x<b.l then
+		res.x=-1
+	elseif p.x>b.r then
+		res.x=1
+	end
+	if p.y<b.t then
+		res.y=-1
+	elseif p.y>b.b then
+		res.y=1
+	end
+	return res
+end
+
+function world:translate(d)
+	if d then
+		self.screens.d=d
+		self.tiles.d={x=0,y=0}
+	end
+	local sd=self.screens.d
+	local td=self.tiles.d
+	local ts={
+		x=self.tiles.w,
+		y=self.tiles.h
+	}
+	local done=false
+	for k in all({'x', 'y'}) do
+		if sd[k]!=0 then
+			td[k]+=sd[k]
+			debug('translate '..k..' to '..td[k])
+			if abs(td[k])>=abs(ts[k]) then
+				done=true
+			end
+		end
+	end
+	if done then
+		self.screens.x+=self.screens.d.x
+		self.screens.y+=self.screens.d.y
+		self.screens.d={x=0,y=0}
+		self.tiles.d={x=0,y=0}
+	end
+	return done
+end
+
+function world:draw()
+	 rectfill(0,0,127,127,12)
+		local tb=self:tilebox()
+		local po=self:pixelorigin()
+		map(tb.x,tb.y, 0,0, tb.w,tb.h)
+		camera(po.x,po.y)
+		for a in all(self.actors) do
+			a:draw()
+		end
+		camera()
+end
+
+--------------------------------
 -- the game
 --------------------------------
 
@@ -232,11 +353,6 @@ end
 -- 1: playing
 -- 2: swapping screens
 gamestate=1
-
-mc={x=0,y=0} -- map coords
-md={x=0,y=0} -- map delta
-ms={w=2,h=2} -- map size
-actors={}
 
 function _init()
  music(0)
@@ -249,7 +365,7 @@ function _init()
 	 },
 		w=2
 	})
-	add(actors, player)
+	world:spawn(player)
 end
 
 function _update60()
@@ -260,52 +376,25 @@ function _update60()
    return
   end
 	elseif gamestate == 2 then
-		if md.x!=0 then
-			mc.x+=md.x
-			if mc.x%16==0 then
-				gamestate=1
-				md.x=0
-			end
+		if world:translate() then
+			gamestate=1
+		else
+			return
 		end
-		if md.y!=0 then
-			mc.y+=md.y
-			if mc.y%16==0 then
-				gamestate=1
-				md.y=0
-			end
-		end
-		return
 	end
 
-	for a in all(actors) do
+	for a in all(world.actors) do
 		a:move()
 	end
-	local m=player:middle()
-	local l=mc.x*8
-	local r=l+127
-	if m.x<l then
+	local b=world:checkbounds(player:middle())
+	if b.x!=0 or b.y!=0 then
 		gamestate=2
-		md.x=-1
-	elseif m.x>r then
-		gamestate=2
-		md.x=1
-	end
-	local t=mc.y*8
-	local b=t+127
-	if m.y<t then
-		gamestate=2
-		md.y=-1
-	elseif m.y>b then
-		gamestate=2
-		md.y=1
+		world:translate(b)
 	end
 end
 
 function _draw()
- rectfill(0,0,127,127,12)
-	map(mc.x,mc.y, 0,0, 16,16)
-	camera(mc.x*8,mc.y*8)
-
+	world:draw()
  if gamestate==0 then
 	 rectfill(15,15,112,44,5)
 	 cursor(19,19)
@@ -314,11 +403,7 @@ function _draw()
 	 cprint("   vicious lizard      ", 9)
 	 cprint("   x or z to start     ", 0)
  end
-
-	for a in all(actors) do
-		a:draw()
-	end
-	camera()
+	drawdebug()
 end
 __gfx__
 70000007333333331111111c00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
@@ -615,4 +700,3 @@ __music__
 00 41424344
 00 41424344
 00 41424344
-
