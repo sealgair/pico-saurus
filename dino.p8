@@ -253,7 +253,7 @@ world={
 		w=8,h=8,
 	},
 	actors={},
-	td=0, ts=4,
+	td=0, ts=8,
 }
 
 function world:tilebox()
@@ -348,6 +348,36 @@ function world:draw()
 	local tb=self:tilebox()
 	local pb=self:pixelbox()
 	map(tb.x,tb.y, 0,0, tb.w,tb.h)
+	-- draw wrapping maps (x)
+	local wsx=self.screens.x+self.screens.d.x
+	if wsx<0 or wsx>=self.screens.w then
+		if self.tiles.d.x!=0 then
+			local cw=abs(self.tiles.d.x)
+			local cx=0
+			local px=0
+			if self.tiles.d.x<0 then
+				cx=tb.x+self.tiles.w*self.screens.w
+			else
+				px=(self.tiles.w-self.tiles.d.x)*self.pixels.w
+			end
+			map(cx,tb.y, px,0, cw,tb.h)
+		end
+	end
+	-- draw wrapping maps (y)
+	local wsy=self.screens.y+self.screens.d.y
+	if wsy<0 or wsy>=self.screens.h then
+		if self.tiles.d.y!=0 then
+			local ch=abs(self.tiles.d.y)
+			local cy=0
+			local py=0
+			if self.tiles.d.y<0 then
+				cy=tb.y+self.tiles.h*self.screens.h
+			else
+				py=(self.tiles.h-self.tiles.d.y)*self.pixels.h
+			end
+			map(tb.x,cy, 0,py, tb.w,ch)
+		end
+	end
 
 	camera(pb.x,pb.y)
 	for a in all(self.actors) do
