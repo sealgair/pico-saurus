@@ -53,16 +53,15 @@ function cprint(msg, c)
 end
 
 -- increment with hard bounds
-function wrap(start, add, max, min)
+function wrap(val, max, min)
  min=min or 0
-	local v=max-min
-	local r=start+add
-	if r>max then
-		r-=v
-	elseif r<min then
-		r+=v
+	local mag=max-min
+	if val>=max then
+		val-=mag
+	elseif val<min then
+		val+=mag
 	end
-	return r
+	return val
 end
 
 -- closest integer above x
@@ -132,9 +131,8 @@ function actor:move()
 		self.wfp=0
 	else
 		self.wfp=wrap(
-		 self.wfp,
-			abs(self.vel.x*dt),
-			self.wfd*#self.sprites.walk-1
+		 self.wfp+abs(self.vel.x*dt),
+			self.wfd*#self.sprites.walk
 		)
 	end
 
@@ -218,7 +216,7 @@ function player:move()
 		self.j=min(self.j+self.jd,1)
 	elseif self.j>0 then
 		player.vel.y-=self.jump*(1+self.j)
-			self.j=0
+		self.j=0
 	end
 
  if btn(self.btn.l) and self.j<=0 then
@@ -255,6 +253,7 @@ world={
 		w=8,h=8,
 	},
 	actors={},
+	td=0, ts=4,
 }
 
 function world:tilebox()
@@ -266,11 +265,13 @@ function world:tilebox()
 	}
 end
 
-function world:pixelorigin()
+function world:pixelbox()
 	local b=self:tilebox()
  return {
 		x=b.x*self.pixels.w,
 		y=b.y*self.pixels.h,
+		w=b.w*self.pixels.w,
+		h=b.h*self.pixels.h,
 	}
 end
 
@@ -279,15 +280,11 @@ function world:spawn(actor)
 end
 
 function world:checkbounds(p)
- local o=self:pixelorigin()
-	local w=self.tiles.w*self.pixels.w
-	local h=self.tiles.h*self.pixels.h
-	local b={
-		l=o.x,
-		r=o.x+w,
-  t=o.y,
-		b=o.y+h,
-	}
+ local b=self:pixelbox()
+	b.l=b.x
+	b.r=b.x+b.w
+ b.t=b.y
+	b.b=b.y+b.h
 	local res={x=0,y=0}
 	if p.x<b.l then
 		res.x=-1
@@ -313,19 +310,33 @@ function world:translate(d)
 		x=self.tiles.w,
 		y=self.tiles.h
 	}
+	if self.td<self.ts then
+		self.td += 1
+		return false
+	else
+		self.td = 0
+	end
 	local done=false
 	for k in all({'x', 'y'}) do
 		if sd[k]!=0 then
 			td[k]+=sd[k]
-			debug('translate '..k..' to '..td[k])
 			if abs(td[k])>=abs(ts[k]) then
 				done=true
 			end
 		end
 	end
 	if done then
-		self.screens.x+=self.screens.d.x
-		self.screens.y+=self.screens.d.y
+		for k,s in pairs({x='w', y='h'}) do
+			self.screens[k]+=self.screens.d[k]
+			if self.screens[k]<0 or self.screens[k]>=self.screens[s] then
+			end
+
+			local w=wrap(self.screens[k], self.screens[s])
+			if w!=self.screens[k] then
+				self.screens[k]=w
+				player[k]+=self:pixelbox()[s]*self.screens[s]*-sign(self.screens.d[k])
+			end
+		end
 		self.screens.d={x=0,y=0}
 		self.tiles.d={x=0,y=0}
 	end
@@ -333,15 +344,16 @@ function world:translate(d)
 end
 
 function world:draw()
-	 rectfill(0,0,127,127,12)
-		local tb=self:tilebox()
-		local po=self:pixelorigin()
-		map(tb.x,tb.y, 0,0, tb.w,tb.h)
-		camera(po.x,po.y)
-		for a in all(self.actors) do
-			a:draw()
-		end
-		camera()
+ rectfill(0,0,127,127,12)
+	local tb=self:tilebox()
+	local pb=self:pixelbox()
+	map(tb.x,tb.y, 0,0, tb.w,tb.h)
+
+	camera(pb.x,pb.y)
+	for a in all(self.actors) do
+		a:draw()
+	end
+	camera()
 end
 
 --------------------------------
