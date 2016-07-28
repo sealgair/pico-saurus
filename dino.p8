@@ -253,7 +253,6 @@ world={
 		w=8,h=8,
 	},
 	actors={},
-	td=0, ts=8,
 }
 
 function world:tilebox()
@@ -310,12 +309,6 @@ function world:translate(d)
 		x=self.tiles.w,
 		y=self.tiles.h
 	}
-	if self.td<self.ts then
-		self.td += 1
-		return false
-	else
-		self.td = 0
-	end
 	local done=false
 	for k in all({'x', 'y'}) do
 		if sd[k]!=0 then
@@ -394,7 +387,7 @@ end
 -- 0: initial
 -- 1: playing
 -- 2: swapping screens
-gamestate=1
+gamestate=0
 
 function _init()
  music(0)
