@@ -149,6 +149,7 @@ function actor:init(x,y)
  self.acc={x=0,y=0}
  self.flipped=false
  self.grounded=false
+	self.walled=false
  self.wfp=0 --current pixel of walking animation
  self.wfd=8 --number of pixels per frame of walking animation
 end
@@ -158,6 +159,15 @@ function actor:middle()
   x=self.x+self.w/2,
   y=self.y+self.h/2,
  }
+end
+
+function actor:setmiddle(args)
+	if args.x then
+		self.x=args.x-self.w/2
+	end
+	if args.y then
+		self.y=args.y-self.h/2
+	end
 end
 
 function actor:move()
@@ -183,10 +193,12 @@ function actor:move()
  --check for map collisions (x)
  local dx=-1
  if (self.vel.x>0) dx=self.w*8-1
+	self.walled=false
  for x=self.x,newx,sign(self.vel.x) do
   if world:collides(x+dx, self.y, 1, self.h*8-1) then
    newx=x
    self.vel.x=0
+			self.walled=true
    break
   end
  end
@@ -211,6 +223,10 @@ function actor:hitbox()
 	return box(self.x, self.y,
 	 self.w*8, self.h*8
 	)
+end
+
+function actor:overlaps(a)
+	return self:hitbox():overlaps(a:hitbox())
 end
 
 function actor:sprite()
@@ -242,23 +258,31 @@ critter = actor.subclass{
  __name="critter",
  run={m=50},
  sprites={
-  stand=79,
-  walk={79},
+  stand=78,
+  walk={78},
+		pinned=79,
  },
 	critter=true,
 }
 
 function critter:init(...)
-	actor.init(self, ...)
+	self.super.init(self, ...)
  self.think=0
 	self.flipped=rnd(1)>.5
+	self.pinned=false
+	self.health=4
 end
 
 function critter:sprite()
+ if self.pinned then
+		return self.sprites.pinned
+	end
  return self.sprites.stand
 end
 
 function critter:move()
+	if self.pinned then return end
+
  self.think-=dt
  if self.think<=0 then
   self.vel.x=self.run.m*(flr(rnd(3))-1)
@@ -268,7 +292,21 @@ function critter:move()
 		 -- seconds until next movement direction needs choosing
   self.think=rnd(1.5)+.5
  end
- actor.move(self)
+ self.super.move(self)
+	if self.walled then
+		self.vel.x*=-1
+		self.flipped=not self.flipped
+	end
+end
+
+function critter:munch(d)
+ local r = min(d, self.health, 0)
+	self.health-=d
+	if self.health<=0 then
+		self.health=0
+		world:despawn(self)
+	end
+	return r
 end
 
 --------------------------------
@@ -297,6 +335,13 @@ function player:init(...)
 	self.es=1
 	self.esd=0
 	self.efc=8
+	self.food={}
+	self.stats={
+		health=1,
+		food=.6,
+		water=.8,
+		sleep=1,
+	}
 end
 
 function player:sprite()
@@ -317,10 +362,11 @@ function player:sprite()
 end
 
 function player:move()
-	if self.grounded and btn(self.btn.e) then
+	if self.grounded and btn(self.btn.e) and #self.food>0 then
 		self.eating=true
 		self.vel.x=0
 		self.acc.x=0
+		self:eat()
 		self.super.move(self)
 		return
 	elseif self.eating then
@@ -356,12 +402,33 @@ function player:move()
  end
 
  self.super.move(self)
+
+	if self.vel.x!=0 and #self.food>0 then
+		for f in all(self.food) do
+			if not self:overlaps(f) then
+				f.pinned=false
+				del(self.food, f)
+			end
+		end
+	end
 end
 
-function player:eat(actors)
-	if self.j<=0 then return end
+function player:eat()
+	local f=self.food[1]
+	self.stats.food+=f:munch(8*dt)/100
+	if f.health<=0 then
+		del(self.food, f)
+	end
+end
+
+function player:findfood(actors)
+	if self.vel.y<=0 then return end
 	for a in all(actors) do
-		if a.critter then
+		if a.critter and self:overlaps(a) then
+			a.pinned=true
+   a:setmiddle{x=self:middle().x}
+			a.flipped=self.flipped
+			add(self.food, a)
 		end
 	end
 end
@@ -411,6 +478,11 @@ end
 -- add an actor to the world
 function world:spawn(actor)
  add(self.actors, actor)
+end
+
+-- remove an actor from the world
+function world:despawn(actor)
+	del(self.actors, actor)
 end
 
 -- spawn all visible critters
@@ -577,13 +649,13 @@ end
 function drawhud()
  rectfill(0,0,127,15,0)
  --heart
- drawahud(13,8, 0,0, 1)
+ drawahud(13,8, 0,0, protagonist.stats.health)
  --stomach
- drawahud(29,13, 0,8, .9)
+ drawahud(29,13, 0,8, protagonist.stats.food)
  --water
- drawahud(45,12, 64,0, 1/60)
+ drawahud(45,12, 64,0, protagonist.stats.water)
  --sleep
- drawahud(61,7, 64,8, .6)
+ drawahud(61,7, 64,8, protagonist.stats.sleep)
 end
 
 --------------------------------
@@ -632,7 +704,7 @@ function _update60()
 			end
 	 end
  end
-	protagonist:eat(world.actors)
+	protagonist:findfood(world.actors)
 end
 
 function _draw()
@@ -686,9 +758,9 @@ ddd00000000dd0000000000000000000ddd000000000000000000000000000000000000000000000
 000fffdddddff556ddd00000000dd000000fffdddddddd0000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000ffffdd000600ffddd0000ddbd5000000ffffddfddd000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000666ddd00000000fffdddddff55600000666fddfbdd000000000000000000000000000000000000000000000000000000000000000000000000000000000
-0000666f0000000000000ffffdd000600000666fdd05650000000000000000000000000000000000000000000000000000000000000000000000000000000000
-000066550000000000000666ddd000000000665500665000000000000000000000000000000000000000000000000000000000000000000000000000f0044000
-000006655000000000000665500000000000066550ee60000000000000000000000000000000000000000000000000000000000000000000000000000f456e00
+0000666f0000000000000ffffdd000600000666fdd056500000000000000000000000000000000000000000000000000000000000000000000000000f0000000
+000066550000000000000666ddd0000000006655006650000000000000000000000000000000000000000000000000000000000000000000f00440000f054e00
+000006655000000000000665500000000000066550ee600000000000000000000000000000000000000000000000000000000000000000000f456e0000444000
 0000000000000000ddd00000000dd000000000000000000800000000000000000000000000000000000000000000000000000000000000000000000000000000
 dddd0000000dd0000ffddd0000ddbd50ddd0000000dbd56000000000000000000000000000000000000000000000000000000000000000000000000000000000
 0fffddddddddbd50000fffdddddff5560ffddd000dddd5ee00000000000000000000000000000000000000000000000000000000000000000000000000000000
