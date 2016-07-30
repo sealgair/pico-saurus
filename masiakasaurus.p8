@@ -9,34 +9,34 @@ sflags={
  sm=0, -- solid map
  mf=1, -- map foreground
  mb=2, -- map background
-	cs=7, -- edible critter spawn
+ cs=7, -- edible critter spawn
 }
 dt=1/60
 g=9.8*60
 
 -- convert sprite flags to a map layer
 function mlayer(flags)
-	l = 0
-	for f in all(flags) do
-		l+=2^f
-	end
-	return l
+ l = 0
+ for f in all(flags) do
+  l+=2^f
+ end
+ return l
 end
 
 -- draw debug messages to the screen
 debuglog={}
 function debug(msg)
-	add(debuglog, msg)
-	while #debuglog > 8 do
-		del(debuglog, debuglog[1])
-	end
+ add(debuglog, msg)
+ while #debuglog > 8 do
+  del(debuglog, debuglog[1])
+ end
 end
 function drawdebug()
-	color(0)
-	cursor(16,32)
-	for msg in all(debuglog) do
-		print(msg)
-	end
+ color(0)
+ cursor(16,32)
+ for msg in all(debuglog) do
+  print(msg)
+ end
 end
 
 -- useful for iterating between x/y & w/h
@@ -44,40 +44,40 @@ xywh={x='w', y='h'}
 
 -- micro class type
 function class(base, proto)
-	proto = proto or {}
-	proto.__index = proto
-	-- todo could save a few tokens by making classes callable
-	local meta = {}
-	setmetatable(proto, meta)
-	if base then
-		meta.__index = base
-	end
-	function meta:__call(...)
-		local this = setmetatable({}, self)
-		if this.init then
-			this:init(...)
-		end
-		return this
-	end
-	return proto
+ proto = proto or {}
+ proto.__index = proto
+ -- todo could save a few tokens by making classes callable
+ local meta = {}
+ setmetatable(proto, meta)
+ if base then
+  meta.__index = base
+ end
+ function meta:__call(...)
+  local this = setmetatable({}, self)
+  if this.init then
+   this:init(...)
+  end
+  return this
+ end
+ return proto
 end
 
 -- print with color
 function cprint(msg, c)
  color(c)
-	print(msg)
+ print(msg)
 end
 
 -- increment with hard bounds
 function wrap(val, max, min)
  min=min or 0
-	local mag=max-min
-	if val>=max then
-		val-=mag
-	elseif val<min then
-		val+=mag
-	end
-	return val
+ local mag=max-min
+ if val>=max then
+  val-=mag
+ elseif val<min then
+  val+=mag
+ end
+ return val
 end
 
 -- closest integer above x
@@ -87,13 +87,13 @@ end
 
 -- returns 1 if x is positive, -1 if x is negative
 function sign(x)
-	return x/abs(x)
+ return x/abs(x)
 end
 
 -- get sprite flags at map coord
 function mfget(x,y,f)
  local s=mget(flr(x/8),flr(y/8))
-	return fget(s,f)
+ return fget(s,f)
 end
 
 --------------------------------
@@ -101,105 +101,105 @@ end
 --------------------------------
 actor = class{
  __name="actor",
-	vel={x=0,y=0},
-	acc={x=0,y=0},
-	flipped=false,
-	grounded=false,
+ vel={x=0,y=0},
+ acc={x=0,y=0},
+ flipped=false,
+ grounded=false,
 }
 
 function actor:init(x,y,opts)
-	opts=opts or {}
+ opts=opts or {}
  self.x=x
  self.y=y
  self.sprites=opts.sprites
-	self.w=opts.w or self.w or 1
-	self.h=opts.h or self.h or 1
-	self.wfp=0 --current pixel of walking animation
-	self.wfd=8 --number of pixels per frame of walking animation
+ self.w=opts.w or self.w or 1
+ self.h=opts.h or self.h or 1
+ self.wfp=0 --current pixel of walking animation
+ self.wfd=8 --number of pixels per frame of walking animation
 end
 
 function actor:middle()
  return {
-		x=self.x+self.w/2,
-		y=self.y+self.h/2,
-	}
+  x=self.x+self.w/2,
+  y=self.y+self.h/2,
+ }
 end
 
 function actor:move()
  --accelerate
-	self.vel.x += self.acc.x*dt
-	self.vel.y += self.acc.y*dt
-	self.vel.y += g*dt
+ self.vel.x += self.acc.x*dt
+ self.vel.y += self.acc.y*dt
+ self.vel.y += g*dt
 
-	--upgade graphical stuff :p
-	if self.vel.x==0 then
-		self.wfp=0
-	else
-		self.wfp=wrap(
-		 self.wfp+abs(self.vel.x*dt),
-			self.wfd*#self.sprites.walk
-		)
-	end
+ --upgade graphical stuff :p
+ if self.vel.x==0 then
+  self.wfp=0
+ else
+  self.wfp=wrap(
+   self.wfp+abs(self.vel.x*dt),
+   self.wfd*#self.sprites.walk
+  )
+ end
 
-	--update coords
-	local newx=self.x+self.vel.x*dt
-	local newy=self.y+self.vel.y*dt
+ --update coords
+ local newx=self.x+self.vel.x*dt
+ local newy=self.y+self.vel.y*dt
 
-	--check for map collisions (x)
+ --check for map collisions (x)
  local dx=-1
-	if (self.vel.x>0) dx=self.w*8-1
-	for x=self.x,newx,sign(self.vel.x) do
-		if world:collides(x+dx, self.y, 1, self.h*8-1) then
-			newx=x
-			self.vel.x=0
-			break
-		end
-	end
+ if (self.vel.x>0) dx=self.w*8-1
+ for x=self.x,newx,sign(self.vel.x) do
+  if world:collides(x+dx, self.y, 1, self.h*8-1) then
+   newx=x
+   self.vel.x=0
+   break
+  end
+ end
  self.x=newx
 
-	--check for map collisions (y)
-	local dy=-1
-	if (self.vel.y>0) dy=self.h*8-1
-	self.grounded=false
-	for y=self.y,newy,sign(self.vel.y) do
-		if world:collides(self.x, y+dy, self.w*8-1, 1) then
-			self.grounded=true
-			newy=y
-			self.vel.y=0
-			break
-		end
-	end
-	self.y=newy
+ --check for map collisions (y)
+ local dy=-1
+ if (self.vel.y>0) dy=self.h*8-1
+ self.grounded=false
+ for y=self.y,newy,sign(self.vel.y) do
+  if world:collides(self.x, y+dy, self.w*8-1, 1) then
+   self.grounded=true
+   newy=y
+   self.vel.y=0
+   break
+  end
+ end
+ self.y=newy
 end
 
 function actor:sprite()
-	local s=self.sprites.stand
+ local s=self.sprites.stand
  if self.vel.y>0 then
-		s=self.sprites.jump.d
-	elseif self.vel.y<0 then
-		s=self.sprites.jump.u
-	elseif self.vel.x!=0 then
-		local wf=flr(self.wfp/self.wfd)+1
+  s=self.sprites.jump.d
+ elseif self.vel.y<0 then
+  s=self.sprites.jump.u
+ elseif self.vel.x!=0 then
+  local wf=flr(self.wfp/self.wfd)+1
   s=self.sprites.walk[wf]
-	end
-	return s
+ end
+ return s
 end
 
 function actor:draw()
-	spr(
-	 self:sprite(),
-		self.x, self.y,
-		self.w, self.h,
-		self.flipped
-	)
+ spr(
+  self:sprite(),
+  self.x, self.y,
+  self.w, self.h,
+  self.flipped
+ )
 end
 
 --------------------------------
 -- critter class
 critter = class(actor, {
-	__name="critter",
-	run={m=50},
-	sprites={
+ __name="critter",
+ run={m=50},
+ sprites={
   stand=79,
   walk={79},
  },
@@ -207,7 +207,7 @@ critter = class(actor, {
 })
 
 function critter:sprite()
-	return self.sprites.stand
+ return self.sprites.stand
 end
 
 function critter:move()
@@ -217,22 +217,22 @@ function critter:move()
   self.think=1
  end
  -- todo: y so slow!?
-	-- actor.move(self)
+ -- actor.move(self)
 end
 
 --------------------------------
 -- player class
 
 player = class(actor, {
-	__name="player",
-	run={a=600, m=100},
-	jump=100,
-	btn={j=2,l=0,r=1},
-	j=0,
-	jd=dt*4, --0-1 in 1/4 seconds
-	w=2,
-	sprites={
- 	stand=64,
+ __name="player",
+ run={a=600, m=100},
+ jump=100,
+ btn={j=2,l=0,r=1},
+ j=0,
+ jd=dt*4, --0-1 in 1/4 seconds
+ w=2,
+ sprites={
+  stand=64,
   walk={80,64,96,64},
   crouch=66,
   jump={u=82,d=98}
@@ -240,88 +240,88 @@ player = class(actor, {
 })
 
 function player:sprite()
-	if self.j>0 then
-		return self.sprites.crouch
-	else
-		return actor.sprite(self)
-	end
+ if self.j>0 then
+  return self.sprites.crouch
+ else
+  return actor.sprite(self)
+ end
 end
 
 function player:move()
-	if btn(self.btn.l) then
-		self.flipped=true
-	elseif btn(self.btn.r) then
-		self.flipped=false
-	end
-	if btn(self.btn.j) and self.grounded then
-		self.j=min(self.j+self.jd,1)
-	elseif self.j>0 then
-		self.vel.y-=self.jump*(1+self.j)
-		self.j=0
-	end
+ if btn(self.btn.l) then
+  self.flipped=true
+ elseif btn(self.btn.r) then
+  self.flipped=false
+ end
+ if btn(self.btn.j) and self.grounded then
+  self.j=min(self.j+self.jd,1)
+ elseif self.j>0 then
+  self.vel.y-=self.jump*(1+self.j)
+  self.j=0
+ end
 
  if btn(self.btn.l) and self.j<=0 then
   self.vel.x-=self.run.a*dt
-		self.vel.x=max(self.vel.x,-self.run.m)
+  self.vel.x=max(self.vel.x,-self.run.m)
  elseif btn(self.btn.r) and self.j<=0 then
-		self.vel.x+=self.run.a*dt
-		self.vel.x=min(self.vel.x,self.run.m)
+  self.vel.x+=self.run.a*dt
+  self.vel.x=min(self.vel.x,self.run.m)
  elseif self.vel.x!=0 then
-		local s=sign(self.vel.x)
-		self.vel.x+=-s*self.run.a*dt
-		if sign(self.vel.x)!=s then
-			self.vel.x=0
-		end
+  local s=sign(self.vel.x)
+  self.vel.x+=-s*self.run.a*dt
+  if sign(self.vel.x)!=s then
+   self.vel.x=0
+  end
  end
 
-	actor.move(self)
+ actor.move(self)
 end
 
 --------------------------------
 -- the world
 --------------------------------
 world={
-	o={
-		x=0,
-		y=16,
-	},
-	screens={
-		w=2,h=2,
-		x=0,y=0,
-		d={x=0,y=0},
-	},
+ o={
+  x=0,
+  y=16,
+ },
+ screens={
+  w=2,h=2,
+  x=0,y=0,
+  d={x=0,y=0},
+ },
  tiles={
-		w=16,h=14,
-		d={x=0,y=0},
-	},
-	pixels={
-		w=8,h=8,
-	},
-	actors={},
+  w=16,h=14,
+  d={x=0,y=0},
+ },
+ pixels={
+  w=8,h=8,
+ },
+ actors={},
 }
 
 function world:tilebox()
-	return {
-		x=self.screens.x*self.tiles.w+self.tiles.d.x,
-		y=self.screens.y*self.tiles.h+self.tiles.d.y,
-		w=self.tiles.w,
-		h=self.tiles.h,
-	}
+ return {
+  x=self.screens.x*self.tiles.w+self.tiles.d.x,
+  y=self.screens.y*self.tiles.h+self.tiles.d.y,
+  w=self.tiles.w,
+  h=self.tiles.h,
+ }
 end
 
 function world:pixelbox()
-	local b=self:tilebox()
+ local b=self:tilebox()
  return {
-		x=b.x*self.pixels.w,
-		y=b.y*self.pixels.h,
-		w=b.w*self.pixels.w,
-		h=b.h*self.pixels.h,
-	}
+  x=b.x*self.pixels.w,
+  y=b.y*self.pixels.h,
+  w=b.w*self.pixels.w,
+  h=b.h*self.pixels.h,
+ }
 end
 
 -- add an actor to the world
 function world:spawn(actor)
-	add(self.actors, actor)
+ add(self.actors, actor)
 end
 
 -- spawn all visible critters
@@ -333,144 +333,144 @@ function world:spawn_critters()
   end
  end
 
-	local b=self:tilebox()
-	for x=b.x, b.w+b.x do
-		for y=b.y, b.h+b.y do
+ local b=self:tilebox()
+ for x=b.x, b.w+b.x do
+  for y=b.y, b.h+b.y do
    local s=mget(x,y)
-			if fget(s,sflags.cs) then
+   if fget(s,sflags.cs) then
     x*=self.pixels.w
     y*=self.pixels.h
-				local c=critter(x, y)
+    local c=critter(x, y)
     c.spawnscreen=screen
-				self:spawn(c)
-			end
-		end
-	end
+    self:spawn(c)
+   end
+  end
+ end
 end
 
 -- check for collisions in box
 function world:collides(x,y,w,h)
-	for nx=x,x+w do
-		for ny=y,y+h do
-			if mfget(nx,ny,sflags.sm) then
-				return true
-			end
-		end
-	end
-	return false
+ for nx=x,x+w do
+  for ny=y,y+h do
+   if mfget(nx,ny,sflags.sm) then
+    return true
+   end
+  end
+ end
+ return false
 end
 
 -- check whether point is outside bounds
 function world:checkbounds(p)
  local b=self:pixelbox()
-	b.l=b.x
-	b.r=b.x+b.w
+ b.l=b.x
+ b.r=b.x+b.w
  b.t=b.y
-	b.b=b.y+b.h
-	local res={x=0,y=0}
+ b.b=b.y+b.h
+ local res={x=0,y=0}
 
-	if p.x<b.l then
-		res.x=-1
-	elseif p.x>b.r then
-		res.x=1
-	end
+ if p.x<b.l then
+  res.x=-1
+ elseif p.x>b.r then
+  res.x=1
+ end
 
-	if p.y<b.t then
-		res.y=-1
-	elseif p.y>b.b then
-		res.y=1
-	end
+ if p.y<b.t then
+  res.y=-1
+ elseif p.y>b.b then
+  res.y=1
+ end
 
-	return res
+ return res
 end
 
 -- move viewport to next screen
 function world:translate(d)
-	if d then
-		self.screens.d=d
-		self.tiles.d={x=0,y=0}
-	end
-	local sd=self.screens.d
-	local td=self.tiles.d
-	local done=false
-	for k,s in pairs(xywh) do
-		if sd[k]!=0 then
-			td[k]+=sd[k]
-			if abs(td[k])>=abs(self.tiles[s]) then
-				done=true
-			end
-		end
-	end
-	if done then
-		for k,s in pairs(xywh) do
-			self.screens[k]+=self.screens.d[k]
-			if self.screens[k]<0 or self.screens[k]>=self.screens[s] then
-			end
+ if d then
+  self.screens.d=d
+  self.tiles.d={x=0,y=0}
+ end
+ local sd=self.screens.d
+ local td=self.tiles.d
+ local done=false
+ for k,s in pairs(xywh) do
+  if sd[k]!=0 then
+   td[k]+=sd[k]
+   if abs(td[k])>=abs(self.tiles[s]) then
+    done=true
+   end
+  end
+ end
+ if done then
+  for k,s in pairs(xywh) do
+   self.screens[k]+=self.screens.d[k]
+   if self.screens[k]<0 or self.screens[k]>=self.screens[s] then
+   end
 
-			local w=wrap(self.screens[k], self.screens[s])
-			if w!=self.screens[k] then
-				self.screens[k]=w
-				player[k]+=self:pixelbox()[s]*self.screens[s]*-sign(self.screens.d[k])
-			end
-		end
-		self.screens.d={x=0,y=0}
-		self.tiles.d={x=0,y=0}
-	end
-	return done
+   local w=wrap(self.screens[k], self.screens[s])
+   if w!=self.screens[k] then
+    self.screens[k]=w
+    player[k]+=self:pixelbox()[s]*self.screens[s]*-sign(self.screens.d[k])
+   end
+  end
+  self.screens.d={x=0,y=0}
+  self.tiles.d={x=0,y=0}
+ end
+ return done
 end
 
 function world:draw()
-	rectfill(0,0,127,127,12)
-	local tb=self:tilebox()
-	local pb=self:pixelbox()
+ rectfill(0,0,127,127,12)
+ local tb=self:tilebox()
+ local pb=self:pixelbox()
 
-	-- compute wrapping coordinates
-	local w={
-		c={
-			x=tb.x,y=tb.y,
-			w=tb.w,
-			h=tb.h,
-		},
-		p={x=0,y=0},
-	}
-	local wrapping=false
-	for k,s in pairs(xywh) do
-		local ws=self.screens[k]+self.screens.d[k]
-		if ws<0 or ws>=self.screens[s] then
-			wrapping=true
-			w.c[k]=0
-			w.c[s]=abs(self.tiles.d[k])
-			w.p[k]=0
-			if self.tiles.d[k]!=0 then
-				if self.tiles.d[k]<0 then
-					w.c[k]=tb[k]+self.tiles[s]*self.screens[s]
-				else
-					w.p[k]=(self.tiles[s]-self.tiles.d[k])*self.pixels[s]
-				end
-			end
-		end
-	end
+ -- compute wrapping coordinates
+ local w={
+  c={
+   x=tb.x,y=tb.y,
+   w=tb.w,
+   h=tb.h,
+  },
+  p={x=0,y=0},
+ }
+ local wrapping=false
+ for k,s in pairs(xywh) do
+  local ws=self.screens[k]+self.screens.d[k]
+  if ws<0 or ws>=self.screens[s] then
+   wrapping=true
+   w.c[k]=0
+   w.c[s]=abs(self.tiles.d[k])
+   w.p[k]=0
+   if self.tiles.d[k]!=0 then
+    if self.tiles.d[k]<0 then
+     w.c[k]=tb[k]+self.tiles[s]*self.screens[s]
+    else
+     w.p[k]=(self.tiles[s]-self.tiles.d[k])*self.pixels[s]
+    end
+   end
+  end
+ end
 
-	function drawmaps(layer)
-		camera(pb.x-self.o.x, pb.y-self.o.y)
-		map(tb.x,tb.y, pb.x,pb.y, tb.w,tb.h, layer)
-		if wrapping then
-			map(
-				w.c.x, w.c.y,
-				pb.x+w.p.x, pb.y+w.p.y,
-				w.c.w,w.c.h,
-				layer
-			)
-		end
-	end
+ function drawmaps(layer)
+  camera(pb.x-self.o.x, pb.y-self.o.y)
+  map(tb.x,tb.y, pb.x,pb.y, tb.w,tb.h, layer)
+  if wrapping then
+   map(
+    w.c.x, w.c.y,
+    pb.x+w.p.x, pb.y+w.p.y,
+    w.c.w,w.c.h,
+    layer
+   )
+  end
+ end
 
  -- do the actual drawing
-	drawmaps(mlayer{sflags.mb}) -- background
-	for a in all(self.actors) do
-		a:draw()
-	end
-	drawmaps(mlayer{sflags.mf, sflags.sm}) -- foreground
-	camera()
+ drawmaps(mlayer{sflags.mb}) -- background
+ for a in all(self.actors) do
+  a:draw()
+ end
+ drawmaps(mlayer{sflags.mf, sflags.sm}) -- foreground
+ camera()
 end
 
 --------------------------------
@@ -478,24 +478,24 @@ end
 --------------------------------
 
 function drawahud(s, bc, x,y, m)
-	rectfill(x+2,y, x+61*m,y+7, bc)
-	spr(s, x,y)
-	for c=1,6 do
-		spr(s+1, x+c*8,y)
-	end
-	spr(s+2, x+56,y)
+ rectfill(x+2,y, x+61*m,y+7, bc)
+ spr(s, x,y)
+ for c=1,6 do
+  spr(s+1, x+c*8,y)
+ end
+ spr(s+2, x+56,y)
 end
 
 function drawhud()
-	rectfill(0,0,127,15,0)
-	--heart
-	drawahud(13,8, 0,0, 1)
-	--stomach
-	drawahud(29,13, 0,8, .9)
-	--water
-	drawahud(45,12, 64,0, 1/60)
-	--sleep
-	drawahud(61,7, 64,8, .6)
+ rectfill(0,0,127,15,0)
+ --heart
+ drawahud(13,8, 0,0, 1)
+ --stomach
+ drawahud(29,13, 0,8, .9)
+ --water
+ drawahud(45,12, 64,0, 1/60)
+ --sleep
+ drawahud(61,7, 64,8, .6)
 end
 
 --------------------------------
@@ -511,48 +511,48 @@ gamestate=1
 function _init()
  music(0)
  player=player(32, 64)
-	world:spawn(player)
-	world:spawn_critters()
+ world:spawn(player)
+ world:spawn_critters()
 end
 
 function _update60()
-	if gamestate == 0 then
-	 if btnp(4) or btnp(5) then
+ if gamestate == 0 then
+  if btnp(4) or btnp(5) then
    gamestate=1
   else
    return
   end
-	elseif gamestate == 2 then
-		if world:translate() then
-			gamestate=1
-			world:spawn_critters()
-		else
-			return
-		end
-	end
+ elseif gamestate == 2 then
+  if world:translate() then
+   gamestate=1
+   world:spawn_critters()
+  else
+   return
+  end
+ end
 
-	for a in all(world.actors) do
-		a:move()
-	end
-	local b=world:checkbounds(player:middle())
-	if b.x!=0 or b.y!=0 then
-		gamestate=2
-		world:translate(b)
-	end
+ for a in all(world.actors) do
+  a:move()
+ end
+ local b=world:checkbounds(player:middle())
+ if b.x!=0 or b.y!=0 then
+  gamestate=2
+  world:translate(b)
+ end
 end
 
 function _draw()
-	world:draw({x=0, y=16})
-	drawhud()
+ world:draw({x=0, y=16})
+ drawhud()
  if gamestate==0 then
-	 rectfill(15,15,112,44,5)
-	 cursor(19,19)
-	 cprint("masiakasaurus knopfleri", 7)
-	 cprint("   mark knopfler's     ", 13)
-	 cprint("   vicious lizard      ", 9)
-	 cprint("   x or z to start     ", 0)
+  rectfill(15,15,112,44,5)
+  cursor(19,19)
+  cprint("masiakasaurus knopfleri", 7)
+  cprint("   mark knopfler's     ", 13)
+  cprint("   vicious lizard      ", 9)
+  cprint("   x or z to start     ", 0)
  end
-	drawdebug()
+ drawdebug()
 end
 __gfx__
 70000007333b333b1111111c00000000000000000000000000000000000000000000000000000000000000000bb0bbb003303330555555555555555555555555
