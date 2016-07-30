@@ -19,28 +19,18 @@ function class(proto)
 	proto = proto or {}
 	proto.__index = proto
 	setmetatable(proto, {
+		__index = proto.super,
 		__call = function(cls, ...)
 			local self = setmetatable({}, proto)
-			self:init(...)
+			if(self.init) self:init(...)
 			return self
 		end
 	})
-	function proto:init() end
 
 	function proto.subclass(subproto)
-		-- todo: factor this out
 		subproto = subproto or {}
-		subproto.__index = subproto
 		subproto.super = proto
-		setmetatable(subproto, {
-			__index = proto,
-			__call = function(cls, ...)
-				local self = setmetatable({}, subproto)
-				self:init(...)
-				return self
-			end
-		})
-		return subproto
+		return class(subproto)
 	end
 	return proto
 end
