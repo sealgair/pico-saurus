@@ -14,6 +14,37 @@ sflags={
 dt=1/60
 g=9.8*60
 
+-- class maker
+function class(proto)
+	proto = proto or {}
+	proto.__index = proto
+	setmetatable(proto, {
+		__call = function(cls, ...)
+			local self = setmetatable({}, proto)
+			self:init(...)
+			return self
+		end
+	})
+	function proto:init() end
+
+	function proto.subclass(subproto)
+		-- todo: factor this out
+		subproto = subproto or {}
+		subproto.__index = subproto
+		subproto.super = proto
+		setmetatable(subproto, {
+			__index = proto,
+			__call = function(cls, ...)
+				local self = setmetatable({}, subproto)
+				self:init(...)
+				return self
+			end
+		})
+		return subproto
+	end
+	return proto
+end
+
 -- convert sprite flags to a map layer
 function mlayer(flags)
  l = 0
@@ -41,26 +72,6 @@ end
 
 -- useful for iterating between x/y & w/h
 xywh={x='w', y='h'}
-
--- micro class type
-function class(base, proto)
- proto = proto or {}
- proto.__index = proto
- -- todo could save a few tokens by making classes callable
- local meta = {}
- setmetatable(proto, meta)
- if base then
-  meta.__index = base
- end
- function meta:__call(...)
-  local this = setmetatable({}, self)
-  if this.init then
-   this:init(...)
-  end
-  return this
- end
- return proto
-end
 
 -- print with color
 function cprint(msg, c)
@@ -101,19 +112,16 @@ end
 --------------------------------
 actor = class{
  __name="actor",
+	w=1, h=1,
  vel={x=0,y=0},
  acc={x=0,y=0},
  flipped=false,
  grounded=false,
 }
 
-function actor:init(x,y,opts)
- opts=opts or {}
+function actor:init(x,y)
  self.x=x
  self.y=y
- self.sprites=opts.sprites
- self.w=opts.w or self.w or 1
- self.h=opts.h or self.h or 1
  self.wfp=0 --current pixel of walking animation
  self.wfd=8 --number of pixels per frame of walking animation
 end
@@ -196,7 +204,8 @@ end
 
 --------------------------------
 -- critter class
-critter = class(actor, {
+
+critter = actor.subclass{
  __name="critter",
  run={m=50},
  sprites={
@@ -204,7 +213,7 @@ critter = class(actor, {
   walk={79},
  },
  think=1, -- seconds until next movement direction needs choosing
-})
+}
 
 function critter:sprite()
  return self.sprites.stand
@@ -213,7 +222,8 @@ end
 function critter:move()
  self.think-=dt
  if self.think<=0 then
-  self.vel.x=self.run.m*(flr(rnd(3))-1)
+		self.vel.y-=100
+  -- self.vel.x=self.run.m*(flr(rnd(3))-1)
   self.think=1
  end
  -- todo: y so slow!?
@@ -223,7 +233,7 @@ end
 --------------------------------
 -- player class
 
-player = class(actor, {
+player = actor.subclass{
  __name="player",
  run={a=600, m=100},
  jump=100,
@@ -237,7 +247,7 @@ player = class(actor, {
   crouch=66,
   jump={u=82,d=98}
  },
-})
+}
 
 function player:sprite()
  if self.j>0 then
@@ -410,7 +420,7 @@ function world:translate(d)
    local w=wrap(self.screens[k], self.screens[s])
    if w!=self.screens[k] then
     self.screens[k]=w
-    player[k]+=self:pixelbox()[s]*self.screens[s]*-sign(self.screens.d[k])
+    theplayer[k]+=self:pixelbox()[s]*self.screens[s]*-sign(self.screens.d[k])
    end
   end
   self.screens.d={x=0,y=0}
@@ -510,8 +520,8 @@ gamestate=1
 
 function _init()
  music(0)
- player=player(32, 64)
- world:spawn(player)
+ theplayer=player(32, 64)
+ world:spawn(theplayer)
  world:spawn_critters()
 end
 
@@ -525,7 +535,7 @@ function _update60()
  elseif gamestate == 2 then
   if world:translate() then
    gamestate=1
-   world:spawn_critters()
+   -- world:spawn_critters()
   else
    return
   end
@@ -534,7 +544,7 @@ function _update60()
  for a in all(world.actors) do
   a:move()
  end
- local b=world:checkbounds(player:middle())
+ local b=world:checkbounds(theplayer:middle())
  if b.x!=0 or b.y!=0 then
   gamestate=2
   world:translate(b)
