@@ -412,7 +412,7 @@ function player:move()
 	end
 
 	-- decrement stats
-	local day=10 --seconds
+	local day=600 --seconds
 	local d=(1/day)*dt
 	local s=abs(self.vel.x)/self.run.m
 	self.stats.sleep-=d/4
@@ -430,6 +430,8 @@ end
 function player:eat()
 	local f=self.food[1]
 	self.stats.food+=f:munch(8*dt)/100
+	f:setmiddle{x=self:middle().x}
+	f.flipped=self.flipped
 	if f.health<=0 then
 		del(self.food, f)
 	end
@@ -440,8 +442,6 @@ function player:findfood(actors)
 	for a in all(actors) do
 		if a.critter and self:overlaps(a) then
 			a.pinned=true
-   a:setmiddle{x=self:middle().x}
-			a.flipped=self.flipped
 			add(self.food, a)
 		end
 	end
@@ -677,6 +677,7 @@ end
 --------------------------------
 
 -- states:
+-- -1: game over
 -- 0: initial
 -- 1: playing
 -- 2: swapping screens
@@ -690,7 +691,7 @@ function _init()
 end
 
 function _update60()
-	cc=0
+	if gamestate == -1 then return end
  if gamestate == 0 then
   if btnp(4) or btnp(5) then
    gamestate=1
@@ -719,18 +720,36 @@ function _update60()
 	 end
  end
 	protagonist:findfood(world.actors)
+
+	if protagonist.stats.health<=0 then
+		gamestate=-1
+	end
+end
+
+function drawsplash()
+	rectfill(15,15,112,44,5)
+	cursor(19,19)
+	cprint("masiakasaurus knopfleri", 7)
+	cprint("   mark knopfler's     ", 13)
+	cprint("   vicious lizard      ", 9)
+	cprint("   x or z to start     ", 0)
+end
+
+function drawgameover()
+	rectfill(0,0, 127,127, 0)
+	cursor(16,16)
+	cprint("game over", 8)
 end
 
 function _draw()
+	if gamestate==-1 then
+		drawgameover()
+		return
+	end
  world:draw({x=0, y=16})
  drawhud()
  if gamestate==0 then
-  rectfill(15,15,112,44,5)
-  cursor(19,19)
-  cprint("masiakasaurus knopfleri", 7)
-  cprint("   mark knopfler's     ", 13)
-  cprint("   vicious lizard      ", 9)
-  cprint("   x or z to start     ", 0)
+		drawsplash()
  end
  drawdebug()
 end
