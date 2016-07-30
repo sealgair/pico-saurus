@@ -362,19 +362,6 @@ function player:sprite()
 end
 
 function player:move()
-	if self.grounded and btn(self.btn.e) and #self.food>0 then
-		self.eating=true
-		self.vel.x=0
-		self.acc.x=0
-		self:eat()
-		self.super.move(self)
-		return
-	elseif self.eating then
-		self.es=1
-		self.esd=0
-		self.eating=false
-	end
-
  if btn(self.btn.l) then
   self.flipped=true
  elseif btn(self.btn.r) then
@@ -401,8 +388,20 @@ function player:move()
   end
  end
 
+	if self.grounded and btn(self.btn.e) and #self.food>0 then
+		self.eating=true
+		self.vel.x=0
+		self.acc.x=0
+		self:eat()
+	elseif self.eating then
+		self.es=1
+		self.esd=0
+		self.eating=false
+	end
+
  self.super.move(self)
 
+ -- make sure we're still pinning food
 	if self.vel.x!=0 and #self.food>0 then
 		for f in all(self.food) do
 			if not self:overlaps(f) then
@@ -410,6 +409,21 @@ function player:move()
 				del(self.food, f)
 			end
 		end
+	end
+
+	-- decrement stats
+	local day=10 --seconds
+	local d=(1/day)*dt
+	local s=abs(self.vel.x)/self.run.m
+	self.stats.sleep-=d/4
+	self.stats.water-=d/2
+	self.stats.food-=d/5*(.6+s)
+	local hd=(1-min(self.stats.food*2, 1))*2
+	hd+=(1-min(self.stats.water*2, 1))*2
+	hd+=(1-min(self.stats.sleep*3, 1))*2
+	self.stats.health-=d*hd
+	for k,v in pairs(self.stats) do
+  self.stats[k]=min(max(v,0),1)
 	end
 end
 
