@@ -113,15 +113,15 @@ end
 actor = class{
  __name="actor",
 	w=1, h=1,
- vel={x=0,y=0},
- acc={x=0,y=0},
- flipped=false,
- grounded=false,
 }
 
 function actor:init(x,y)
  self.x=x
  self.y=y
+ self.vel={x=0,y=0}
+ self.acc={x=0,y=0}
+ self.flipped=false
+ self.grounded=false
  self.wfp=0 --current pixel of walking animation
  self.wfd=8 --number of pixels per frame of walking animation
 end
@@ -212,8 +212,13 @@ critter = actor.subclass{
   stand=79,
   walk={79},
  },
- think=1, -- seconds until next movement direction needs choosing
+	critter=true,
 }
+
+function critter:init(...)
+	actor.init(self, ...)
+ self.think=1 -- seconds until next movement direction needs choosing
+end
 
 function critter:sprite()
  return self.sprites.stand
@@ -222,12 +227,10 @@ end
 function critter:move()
  self.think-=dt
  if self.think<=0 then
-		self.vel.y-=100
-  -- self.vel.x=self.run.m*(flr(rnd(3))-1)
+  self.vel.x=self.run.m*(flr(rnd(3))-1)
   self.think=1
  end
- -- todo: y so slow!?
- -- actor.move(self)
+ actor.move(self)
 end
 
 --------------------------------
@@ -336,10 +339,9 @@ end
 
 -- spawn all visible critters
 function world:spawn_critters()
- local screen=self.screens.x..","..self.screens.y
  for a in all(self.actors) do
-  if a.spawnscreen then
-   del(a)
+  if a.critter then
+   del(world.actors, a)
   end
  end
 
@@ -526,6 +528,7 @@ function _init()
 end
 
 function _update60()
+	cc=0
  if gamestate == 0 then
   if btnp(4) or btnp(5) then
    gamestate=1
@@ -535,7 +538,7 @@ function _update60()
  elseif gamestate == 2 then
   if world:translate() then
    gamestate=1
-   -- world:spawn_critters()
+   world:spawn_critters()
   else
    return
   end
@@ -543,11 +546,15 @@ function _update60()
 
  for a in all(world.actors) do
   a:move()
- end
- local b=world:checkbounds(theplayer:middle())
- if b.x!=0 or b.y!=0 then
-  gamestate=2
-  world:translate(b)
+	 local b=world:checkbounds(a:middle())
+	 if b.x!=0 or b.y!=0 then
+			if a==theplayer then
+		  gamestate=2
+		  world:translate(b)
+			else
+				del(world.actors, a)
+			end
+	 end
  end
 end
 
