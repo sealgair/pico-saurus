@@ -77,7 +77,7 @@ xywh={x='w', y='h'}
 
 -- is color a darker than color b?
 darkorder={
-	0,1,2,5,4,3,8,5,13,9,6,11,15,12,10,7
+	0,2,1,5,4,3,8,13,9,14,6,11,15,12,10,7
 }
 darkindex={}
 for k,v in pairs(darkorder) do
@@ -85,6 +85,35 @@ for k,v in pairs(darkorder) do
 end
 function darker(a, b)
 	return darkindex[a]<darkindex[b]
+end
+
+-- color mappings for nighttime
+nightmap={
+	[1]=0,
+	[2]=1,
+	[3]=1,
+	[4]=5,
+	[5]=0,
+	[6]=5,
+	[7]=6,
+	[8]=4,
+	[9]=4,
+	[10]=9,
+	[11]=3,
+	[12]=13,
+	[13]=2,
+	[14]=8,
+	[15]=4,
+}
+function isnight()
+	return daytime>day-twilight/2
+end
+function mapnight()
+	if isnight() then
+		for f,t in pairs(nightmap) do
+			pal(f, t)
+		end
+	end
 end
 
 -- print with color
@@ -704,7 +733,8 @@ function world:draw()
   end
  end
 
- function drawmaps(layer)
+	function drawmaps(layer)
+		mapnight()
   camera(pb.x-self.o.x, pb.y-self.o.y)
   map(tb.x,tb.y, pb.x,pb.y, tb.w,tb.h, layer)
   if wrapping then
@@ -715,6 +745,7 @@ function world:draw()
     layer
    )
   end
+		pal()
  end
 
  -- do the actual drawing
@@ -740,6 +771,7 @@ function drawahud(s, bc, x,y, m)
 end
 
 function drawhud()
+	mapnight()
  rectfill(0,0,127,15,0)
  --heart
  drawahud(13,8, 0,0, protagonist.stats.health)
@@ -749,6 +781,7 @@ function drawhud()
  drawahud(45,12, 64,0, protagonist.stats.water)
  --sleep
  drawahud(61,7, 64,8, protagonist.stats.sleep)
+	pal()
 end
 
 --------------------------------
