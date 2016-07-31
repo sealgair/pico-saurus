@@ -106,7 +106,7 @@ nightmap={
 	[15]=4,
 }
 function isnight()
-	return daytime>day-twilight/2
+	return daytime>day-twilight/2 and daytime<day*2-twilight/2
 end
 function mapnight()
 	if isnight() then
@@ -806,7 +806,7 @@ function _init()
  world:spawn(protagonist)
  world:spawn_critters()
 	world:makestars(128)
-	daytime=day-twilight-2
+	daytime=day*2-twilight/2
 end
 
 function _update60()
