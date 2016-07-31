@@ -47,6 +47,19 @@ function reverse(t)
 	end
 end
 
+-- find key of table item (nil if not found)
+function find(t, item)
+	for k,v in pairs(t) do
+		if (v==item) return k
+	end
+	return nil
+end
+
+-- randomly choose item from table
+function rndchoice(t)
+	return t[flr(rnd(#t))+1]
+end
+
 -- convert sprite flags to a map layer
 function mlayer(...)
  l = 0
@@ -65,7 +78,11 @@ function debug(msg)
  end
 end
 function drawdebug()
- color(8)
+	if isnight() then
+ 	color(8)
+	else
+		color(0)
+	end
  cursor(4,20)
  for msg in all(debuglog) do
   print(msg)
@@ -546,6 +563,7 @@ world={
  },
 	stars={},
  actors={},
+	critterpop={},
 }
 
 function world:makestars(n)
@@ -578,6 +596,11 @@ function world:pixelbox()
  }
 end
 
+-- unique key for current screen
+function world:screenkey()
+	return self.screens.x..","..self.screens.y
+end
+
 -- add an actor to the world
 function world:spawn(actor)
  add(self.actors, actor)
@@ -585,7 +608,13 @@ end
 
 -- remove an actor from the world
 function world:despawn(actor)
-	del(self.actors, actor)
+	if find(self.actors, actor) != nil then
+		if actor.critter then
+			local s=self:screenkey()
+			self.critterpop[s]-=1
+		end
+		del(self.actors, actor)
+	end
 end
 
 -- spawn the player
@@ -614,18 +643,35 @@ function world:spawn_critters()
  end
 
  local b=self:tilebox()
+	local critters={}
+	-- find the critters on the map
  for x=b.x, b.w+b.x do
   for y=b.y, b.h+b.y do
    local s=mget(x,y)
    if fget(s,sflags.cs) then
     x*=self.pixels.w
     y*=self.pixels.h
-    local c=critter(x, y)
-    c.spawnscreen=screen
-    self:spawn(c)
+				add(critters, critter(x, y))
    end
   end
  end
+	-- choose from available based on population
+	local s=self:screenkey()
+ if self.critterpop[s]==nil or self.critterpop[s]>#critters then
+		self.critterpop[s]=#critters
+	end
+	for i=1,self.critterpop[s] do
+		local c=rndchoice(critters)
+		self:spawn(c)
+		del(critters, c)
+	end
+end
+
+-- a new day has dawned, update stuff
+function world:morning()
+	for s,p in pairs(self.critterpop) do
+		self.critterpop[s]=p+2
+	end
 end
 
 -- check for collisions in box
@@ -822,7 +868,7 @@ function _init()
  protagonist=world:spawn_protagonist()
  world:spawn_critters()
 	world:makestars(128)
-	daytime=day*2-twilight/2
+	daytime=0
 end
 
 function _update60()
@@ -835,7 +881,10 @@ function _update60()
   end
 	elseif gamestate == 1 then
 		daytime+=dt
-		if daytime>day*2 then daytime=0 end
+		if daytime>day*2 then
+			daytime=0
+			world:morning()
+		end
  elseif gamestate == 2 then
   if world:translate() then
    gamestate=1
