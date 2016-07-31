@@ -13,6 +13,7 @@ sflags={
 }
 dt=1/60
 g=9.8*60
+day=90 --seconds
 
 -- class maker
 function class(proto)
@@ -63,7 +64,7 @@ function debug(msg)
 end
 function drawdebug()
  color(0)
- cursor(16,32)
+ cursor(4,20)
  for msg in all(debuglog) do
   print(msg)
  end
@@ -283,19 +284,27 @@ end
 function critter:move()
 	if self.pinned then return end
 
- self.think-=dt
- if self.think<=0 then
-  self.vel.x=self.run.m*(flr(rnd(3))-1)
-		if self.vel.x!=0 then
-			self.flipped=self.vel.x<0
-		end
-		 -- seconds until next movement direction needs choosing
-  self.think=rnd(1.5)+.5
- end
+ local pb = protagonist:hitbox().b
+	local d = protagonist:middle().x - self:middle().x
+	if pb>=self.y and pb<=self:hitbox().b and abs(d) < 64 then
+		self.vel.x=-sign(d)*self.run.m
+		self.think=1
+	else
+	 self.think-=dt
+	 if self.think<=0 then
+	  self.vel.x=self.run.m*(flr(rnd(3))-1)
+			 -- seconds until next movement direction needs choosing
+	  self.think=rnd(1.5)+.5
+	 end
+	end
+
  self.super.move(self)
+
 	if self.walled then
 		self.vel.x*=-1
-		self.flipped=not self.flipped
+	end
+	if self.vel.x!=0 then
+		self.flipped=self.vel.x<0
 	end
 end
 
@@ -412,7 +421,6 @@ function player:move()
 	end
 
 	-- decrement stats
-	local day=600 --seconds
 	local d=(1/day)*dt
 	local s=abs(self.vel.x)/self.run.m
 	self.stats.sleep-=d/4
@@ -1048,3 +1056,4 @@ __music__
 00 41424344
 00 41424344
 00 41424344
+
