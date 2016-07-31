@@ -482,8 +482,13 @@ function player:move()
 	local d=(1/day)*dt
 	local s=abs(self.vel.x)/self.run.m
 	self.stats.sleep-=d/3
-	self.stats.water-=d/2
+	self.stats.water-=d/3
 	self.stats.food-=d/5*(.6+s)
+	if isnight() then
+		self.stats.sleep-=d/5
+	else
+		self.stats.water-=d/3
+	end
 	local hd=(1-min(self.stats.food*2, 1))*2
 	hd+=(1-min(self.stats.water*2, 1))*2
 	hd+=(1-min(self.stats.sleep*3, 1))*2
