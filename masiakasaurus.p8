@@ -1,9 +1,13 @@
 pico-8 cartridge // http://www.pico-8.com
 version 8
 __lua__
---------------------------------
--- utilities
---------------------------------
+-- game states:
+-- -1: game over
+-- 0: initial
+-- 1: playing
+-- 2: swapping screens
+gamestate=0
+
 -- sprite flags
 sflags={
  sm=0, -- solid map
@@ -12,10 +16,14 @@ sflags={
 	wm=4, -- water map tile
  cs=7, -- edible critter spawn
 }
-dt=1/60
-g=9.8*60
-day=90 --seconds
-twilight=6
+dt=1/60 --clock tick time
+g=9.8*60 -- gravity acceleration
+day=60 -- day length in seconds
+twilight=6 -- twilight length
+
+--------------------------------
+-- utilities
+--------------------------------
 
 -- class maker
 function class(proto)
@@ -94,7 +102,7 @@ xywh={x='w', y='h'}
 
 -- is color a darker than color b?
 darkorder={
-	0,2,1,5,4,3,8,13,9,14,6,11,15,12,10,7
+	0,1,2,5,4,3,8,13,9,14,6,11,15,12,10,7
 }
 darkindex={}
 for k,v in pairs(darkorder) do
@@ -383,7 +391,7 @@ end
 
 player = actor.subclass{
  __name="player",
- run={a=600, m=100},
+ run={a=600, m=80},
  jump=100,
  btn={j=2,l=0,r=1,c=3,e=4,s=5},
  jd=dt*4, --0-1 in 1/4 seconds
@@ -403,6 +411,7 @@ function player:init(...)
 	self.j=0
 	self.eating=false
 	self.drinking=false
+	self.crouched=true
 	self.es=1
 	self.esd=0
 	self.efc=8
@@ -416,7 +425,9 @@ function player:init(...)
 end
 
 function player:sprite()
-	if self.drinking then
+	if self.crouched then
+		return self.sprites.crouch
+	elseif self.drinking then
 		return self.sprites.drink
 	elseif self.eating then
 		self.esd+=1
@@ -447,12 +458,20 @@ function player:move()
   self.j=0
  end
 
- if btn(self.btn.l) and self.j<=0 then
+ local run=self.run.m
+	if btn(self.btn.s) then
+		run*=1.5
+	end
+
+	self.crouched=btn(self.btn.c)
+	if self.crouched then
+		self.vel.x=0
+	elseif btn(self.btn.l) and self.j<=0 then
   self.vel.x-=self.run.a*dt
-  self.vel.x=max(self.vel.x,-self.run.m)
+  self.vel.x=max(self.vel.x,-run)
  elseif btn(self.btn.r) and self.j<=0 then
   self.vel.x+=self.run.a*dt
-  self.vel.x=min(self.vel.x,self.run.m)
+  self.vel.x=min(self.vel.x,run)
  elseif self.vel.x!=0 then
   local s=sign(self.vel.x)
   self.vel.x+=-s*self.run.a*dt
@@ -856,13 +875,6 @@ end
 -- the game
 --------------------------------
 
--- states:
--- -1: game over
--- 0: initial
--- 1: playing
--- 2: swapping screens
-gamestate=1
-
 function _init()
  music(0)
  protagonist=world:spawn_protagonist()
@@ -914,12 +926,14 @@ function _update60()
 end
 
 function drawsplash()
-	rectfill(15,15,112,44,5)
+	rectfill(15,15,112,57,5)
 	cursor(19,19)
-	cprint("masiakasaurus knopfleri", 7)
-	cprint("   mark knopfler's     ", 13)
-	cprint("   vicious lizard      ", 9)
-	cprint("   x or z to start     ", 0)
+	cprint("masiakasaurus knopfleri", 8)
+	cprint(" mark knopfler's", 9)
+	cprint(" vicious lizard", 9)
+	cprint(" z to eat", 6)
+	cprint(" x to run", 6)
+	cprint(" x or z to start", 7)
 end
 
 function drawgameover()
