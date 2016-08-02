@@ -6,6 +6,7 @@ __lua__
 -- 0: initial
 -- 1: playing
 -- 2: swapping screens
+-- 3: sleeping
 gamestate=0
 
 -- sprite flags
@@ -400,6 +401,7 @@ player = actor.subclass{
   stand=64,
   walk={80,64,96,64},
   crouch=66,
+		sleep=112,
   jump={u=82,d=98},
 		eat={68, 84, fc={16,8}},
 		drink=100,
@@ -425,8 +427,14 @@ function player:init(...)
 end
 
 function player:sprite()
-	if self.crouched then
-		return self.sprites.crouch
+	if self.asleep then
+		return self.sprites.sleep
+	elseif self.crouched then
+		if self.sleepcount and self.sleepcount>1.2 then
+			return self.sprites.sleep
+		else
+			return self.sprites.crouch
+		end
 	elseif self.drinking then
 		return self.sprites.drink
 	elseif self.eating then
@@ -465,6 +473,15 @@ function player:move()
 
 	self.crouched=btn(self.btn.c)
 	if self.crouched then
+		if self.sleepcount==nil then
+			self.sleepcount=0
+		else
+			self.sleepcount+=dt
+			if self.sleepcount>3 then
+				self.sleepcount=nil
+				self.sleeping=true
+			end
+		end
 		self.vel.x=0
 	elseif btn(self.btn.l) and self.j<=0 then
   self.vel.x-=self.run.a*dt
@@ -513,24 +530,27 @@ function player:move()
 			end
 		end
 	end
+end
 
-	-- decrement stats
+-- decrement stats
+function player:age(dt)
 	local d=(1/day)*dt
 	local s=abs(self.vel.x)/self.run.m
-	self.stats.sleep-=d/3
 	self.stats.water-=d/3
 	self.stats.food-=d/5*(.6+s)
+	self.stats.sleep-=d/3
 	if isnight() then
 		self.stats.sleep-=d/5
 	else
 		self.stats.water-=d/3
 	end
+
 	local hd=(1-min(self.stats.food*2, 1))*2
 	hd+=(1-min(self.stats.water*2, 1))*2
 	hd+=(1-min(self.stats.sleep*3, 1))*2
 	self.stats.health-=d*hd
 	for k,v in pairs(self.stats) do
-  self.stats[k]=min(max(v,0),1)
+		self.stats[k]=min(max(v,0),1)
 	end
 end
 
@@ -558,6 +578,38 @@ function player:findfood(actors)
 			add(self.food, a)
 		end
 	end
+end
+
+function player:snooze(dt)
+	if self.sleeptime==nil then
+		self.sleeptime=0
+	else
+		self.sleeptime+=dt
+	end
+
+	local d=(1/day)*dt
+	self.stats.water-=d/6
+	self.stats.food-=d/5
+	self.stats.sleep+=d/3
+	if isnight() then
+		self.stats.sleep+=d/5
+	end
+
+	local hd=1/3
+	hd+=min(self.stats.food*2-1, 0)
+	hd+=min(self.stats.food*2-1, 0)/3
+	self.stats.health+=d*hd
+	for k,v in pairs(self.stats) do
+		self.stats[k]=min(max(v,0),1)
+	end
+
+	-- check whether we woke up
+	if self.stats.sleep>=1 or self.sleeptime>day*2/3 or daytime<(day/60) then
+		self.sleeptime=nil
+		self.sleeping=false
+		return true
+	end
+	return false
 end
 
 --------------------------------
@@ -683,6 +735,15 @@ function world:spawn_critters()
 		local c=rndchoice(critters)
 		self:spawn(c)
 		del(critters, c)
+	end
+end
+
+-- advance daytime
+function world:advance(dt)
+	daytime+=dt
+	if daytime>day*2 then
+		daytime=0
+		world:morning()
 	end
 end
 
@@ -884,26 +945,29 @@ function _init()
 end
 
 function _update60()
-	if gamestate == -1 then return end
- if gamestate == 0 then
+	if gamestate==-1 then return end
+ if gamestate==0 then
   if btnp(4) or btnp(5) then
    gamestate=1
   else
    return
   end
-	elseif gamestate == 1 then
-		daytime+=dt
-		if daytime>day*2 then
-			daytime=0
-			world:morning()
-		end
- elseif gamestate == 2 then
+	elseif gamestate==1 then
+		world:advance(dt)
+ elseif gamestate==2 then
   if world:translate() then
    gamestate=1
    world:spawn_critters()
   else
    return
   end
+	elseif gamestate==3 then
+		local sdt=dt*10
+		world:advance(sdt)
+		if protagonist:snooze(sdt) then
+			gamestate=1
+		end
+		return
  end
 
  for a in all(world.actors) do
@@ -919,9 +983,12 @@ function _update60()
 	 end
  end
 	protagonist:findfood(world.actors)
+	protagonist:age(dt)
 
 	if protagonist.stats.health<=0 then
 		gamestate=-1
+	elseif protagonist.sleeping then
+		gamestate=3
 	end
 end
 
@@ -942,6 +1009,11 @@ function drawgameover()
 	cprint("game over", 8)
 end
 
+function drawsleep()
+	rectfill(32,32,96,48,5)
+	print("sleeping...", 36,36, 6)
+end
+
 function _draw()
 	if gamestate==-1 then
 		drawgameover()
@@ -952,6 +1024,9 @@ function _draw()
  if gamestate==0 then
 		drawsplash()
  end
+	if gamestate==3 then
+		drawsleep()
+	end
  drawdebug()
 end
 __gfx__
@@ -1015,10 +1090,10 @@ dddd0000000dd0000ffddd0000ddbd50dddd00000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000dddddd000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+0000dfffddddd0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+000df666f5dddd000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00ddf665655ffd000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
