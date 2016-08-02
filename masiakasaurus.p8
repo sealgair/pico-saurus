@@ -80,7 +80,11 @@ end
 
 -- draw debug messages to the screen
 debuglog={}
-function debug(msg)
+function debug(...)
+	local msg=""
+	for m in all({...}) do
+		msg=msg.." "..m
+	end
  add(debuglog, msg)
  while #debuglog > 8 do
   del(debuglog, debuglog[1])
@@ -190,6 +194,16 @@ function box:init(l,t,w,h)
 	self.t=t
 	self.h=h
 	self.b=t+h
+end
+
+-- box contains point
+function box:contains(p)
+	return (
+	 p.x>self.l and
+		p.x<self.r and
+		p.y>self.t and
+		p.y<self.b
+	)
 end
 
 function box:overlaps(other)
@@ -427,7 +441,7 @@ function player:init(...)
 end
 
 function player:sprite()
-	if self.asleep then
+	if self.sleeping then
 		return self.sprites.sleep
 	elseif self.crouched then
 		if self.sleepcount and self.sleepcount>1.2 then
@@ -604,7 +618,9 @@ function player:snooze(dt)
 	end
 
 	-- check whether we woke up
-	if self.stats.sleep>=1 or self.sleeptime>day*2/3 or daytime<(day/60) then
+	if (self.stats.sleep>=1
+	  or self.sleeptime>day*2/3
+			or daytime<(day/60)) then
 		self.sleeptime=nil
 		self.sleeping=false
 		return true
@@ -665,6 +681,15 @@ function world:pixelbox()
   w=b.w*self.pixels.w,
   h=b.h*self.pixels.h,
  }
+end
+
+-- pixel offset of the screen
+function world:offset()
+	local pb=self:pixelbox()
+	return {
+		x=pb.x-self.o.x,
+		y=pb.y-self.o.y,
+	}
 end
 
 -- unique key for current screen
@@ -942,6 +967,8 @@ function _init()
  world:spawn_critters()
 	world:makestars(128)
 	daytime=0
+	wakingtime=0
+	sleeptime=0
 end
 
 function _update60()
@@ -963,12 +990,18 @@ function _update60()
   end
 	elseif gamestate==3 then
 		local sdt=dt*10
+		sleeptime+=dt
 		world:advance(sdt)
 		if protagonist:snooze(sdt) then
 			gamestate=1
+			sleeptime=0
+			wakingtime=.5
 		end
 		return
  end
+	if wakingtime > 0 then
+		wakingtime-=dt
+	end
 
  for a in all(world.actors) do
   a:move()
@@ -1009,9 +1042,38 @@ function drawgameover()
 	cprint("game over", 8)
 end
 
-function drawsleep()
-	rectfill(32,32,96,48,5)
-	print("sleeping...", 36,36, 6)
+function drawsleep(time)
+	local o=world:offset()
+	local pb=protagonist:hitbox()
+	pb=box(
+		pb.x-pb.w-o.x,
+		pb.y-pb.h-o.y,
+		pb.w*3, pb.h*3
+	)
+	local pm={
+		x=pb.x+pb.w/2,
+		y=pb.y+pb.h/2,
+	}
+	local c={5,6}
+	if isnight() then
+		c={0,5}
+	end
+	for x=0,127 do
+		for y=16,127 do
+			local r=rnd()
+			if pb:contains({x=x,y=y}) then
+				local dx=(x-pm.x)/(pb.w/2)
+				local dy=(y-pm.y)/(pb.h/2)
+				if dx*dx+dy*dy < 1 then
+					r=time
+				end
+			end
+			if r<time then
+				r=r*1/time
+				pset(x,y,c[flr(r*#c)+1])
+			end
+		end
+	end
 end
 
 function _draw()
@@ -1025,7 +1087,9 @@ function _draw()
 		drawsplash()
  end
 	if gamestate==3 then
-		drawsleep()
+		drawsleep(min(sleeptime/2, .8))
+	elseif wakingtime > 0 then
+		drawsleep(wakingtime)
 	end
  drawdebug()
 end
