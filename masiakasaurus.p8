@@ -230,9 +230,9 @@ function partgen:init(args)
 	-- required args
  self.x=args.x
 	self.y=args.y
-	self.color=args.color
 
 	-- optional args
+	self.colors=args.colors or {args.color} or {7}
 	self.dur=args.duration or maxnum
 	self.rate=args.rate or 10
 	self.pdur=args.partduration or .2
@@ -257,6 +257,7 @@ function partgen:update()
 		while self.pcount < self.rate*self.age do
 			add(self.particles, {
 				x=self.x, y=self.y,
+				c=rndchoice(self.colors),
 				vel={x=rnd(200)-100, y=-rnd(100)},
 				age=0,
 			})
@@ -278,7 +279,7 @@ end
 
 function partgen:draw(o)
 	for p in all(self.particles) do
-		pset(p.x, p.y, self.color)
+		pset(p.x, p.y, p.c)
 	end
 end
 
@@ -427,7 +428,7 @@ function fish:init(...)
 	self.vel.y=-self.jump
 	world:particles{
 		x=self.x+4, y=self.y+8,
-		color=7,
+		colors={7,12,1,13},
 		duration=0.1,
 		rate=20,
 	}
@@ -438,7 +439,7 @@ function fish:touch(s)
 		world:despawn(self)
 		world:particles{
 			x=self.x+4, y=self.y+8,
-			color=7,
+			colors={7,12,1,13},
 			duration=0.1,
 			rate=20,
 		}
@@ -672,7 +673,7 @@ function player:move()
 
 	if self.eating and not self.eatparts then
 		local args=self:mouth()
-		args.color=8
+		args.colors={8,8,14}
 		args.rate=50
 		self.eatparts=world:particles(args)
 	elseif not self.eating and self.eatparts then
@@ -681,8 +682,8 @@ function player:move()
 	end
 	if self.drinking and not self.drinkparts then
 		local args=self:mouth()
-		args.color=7
-		args.rate=5
+		args.colors={7,12,1,13}
+		args.rate=8
 		self.drinkparts=world:particles(args)
 	elseif not self.drinking and self.drinkparts then
 		self.drinkparts:stop()
