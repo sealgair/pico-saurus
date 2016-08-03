@@ -21,6 +21,7 @@ dt=1/60 --clock tick time
 g=9.8*60 -- gravity acceleration
 day=60 -- day length in seconds
 twilight=6 -- twilight length
+maxnum=32767.99
 
 --------------------------------
 -- utilities
@@ -219,6 +220,68 @@ function box:overlaps(other)
 end
 
 --------------------------------
+-- particles
+--------------------------------
+
+partgen = class()
+
+function partgen:init(args)
+	-- required args
+ self.x=args.x
+	self.y=args.y
+	self.color=args.color
+
+	-- optional args
+	self.dur=args.duration or maxnum
+	self.rate=args.rate or 10
+	self.pdur=args.partduration or .2
+
+	self.particles={}
+	self.age=0
+	self.pcount=0
+end
+
+-- have i finished drawing
+function partgen:done()
+	return self.age>self.dur and #self.particles<=0
+end
+
+function partgen:stop()
+	self.dur=0
+end
+
+function partgen:update()
+	if self.age<=self.dur then
+	 self.age+=dt
+		while self.pcount < self.rate*self.age do
+			add(self.particles, {
+				x=self.x, y=self.y,
+				vel={x=rnd(200)-100, y=-rnd(100)},
+				age=0,
+			})
+			self.pcount+=1
+		end
+	end
+
+	for p in all(self.particles) do
+		p.age+=dt
+		if p.age>=self.pdur then
+			del(self.particles, p)
+		else
+			p.x+=p.vel.x*dt
+			p.y+=p.vel.y*dt
+			p.vel.y+=g*dt
+		end
+	end
+end
+
+function partgen:draw(o)
+	for p in all(self.particles) do
+		pset(p.x, p.y, self.color)
+	end
+end
+
+--------------------------------
 -- actor class
 --------------------------------
 actor = class{
@@ -240,8 +303,8 @@ end
 
 function actor:middle()
  return {
-  x=self.x+self.w/2,
-  y=self.y+self.h/2,
+  x=self.x+self.w*8/2,
+  y=self.y+self.h*8/2,
  }
 end
 
@@ -467,6 +530,18 @@ function player:sprite()
  return self.super.sprite(self)
 end
 
+-- coords of my mouth
+function player:mouth()
+	local c=self:middle()
+	c.y=self:hitbox().b
+	if self.flipped then
+		c.x-=4
+	else
+		c.x+=4
+	end
+	return c
+end
+
 function player:move()
  if btn(self.btn.l) then
   self.flipped=true
@@ -531,6 +606,23 @@ function player:move()
 	if not self.eating then
 		self.es=1
 		self.esd=0
+	end
+
+	if self.eating and not self.eatparts then
+		local args=self:mouth()
+		args.color=8
+		self.eatparts=world:particles(args)
+	elseif not self.eating and self.eatparts then
+		self.eatparts:stop()
+		self.eatparts=nil
+	end
+	if self.drinking and not self.drinkparts then
+		local args=self:mouth()
+		args.color=7
+		self.drinkparts=world:particles(args)
+	elseif not self.drinking and self.drinkparts then
+		self.drinkparts:stop()
+		self.drinkparts=nil
 	end
 
  self.super.move(self)
@@ -649,6 +741,7 @@ world={
   w=8,h=8,
  },
 	stars={},
+	partgens={},
  actors={},
 	critterpop={},
 }
@@ -695,6 +788,13 @@ end
 -- unique key for current screen
 function world:screenkey()
 	return self.screens.x..","..self.screens.y
+end
+
+-- add a partcle generator to the world
+function world:particles(args)
+	local p=partgen(args)
+	add(self.partgens, p)
+	return p
 end
 
 -- add an actor to the world
@@ -769,6 +869,12 @@ function world:advance(dt)
 	if daytime>day*2 then
 		daytime=0
 		world:morning()
+	end
+	for p in all(self.partgens) do
+		p:update(dt)
+		if p:done() then
+			del(self.partgens, p)
+		end
 	end
 end
 
@@ -922,11 +1028,14 @@ function world:draw()
  end
 
  -- do the actual drawing
- drawmaps(mlayer(sflags.mb)) -- background
+ drawmaps(mlayer(sflags.mb, sflags.sm)) -- background
  for a in reverse(self.actors) do
   a:draw()
  end
- drawmaps(mlayer(sflags.mf, sflags.sm)) -- foreground
+	for p in all(self.partgens) do
+		p:draw(self:offset())
+	end
+ drawmaps(mlayer(sflags.mf)) -- foreground
  camera()
 end
 
