@@ -1083,6 +1083,12 @@ function _init()
 	sleeptime=0
 end
 
+-- so that the web player works
+function _update()
+	_update60()
+	_update60()
+end
+
 function _update60()
 	if gamestate==-1 then return end
  if gamestate==0 then
