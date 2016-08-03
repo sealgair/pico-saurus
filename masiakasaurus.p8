@@ -417,7 +417,8 @@ fish = actor.subclass{
 	sprites={
 		jump={94, 95},
 		flop={110, 111},
-	}
+	},
+	animd=.1,
 }
 
 function fish:init(...)
@@ -447,12 +448,12 @@ end
 function fish:move()
 	self.super.move(self)
  self.anim+=dt
-	if (self.anim>1) self.anim=0
+	if (self.anim>2*self.animd) self.anim=0
 	self.upsidedown=self.vel.y>=0
 end
 
 function fish:sprite()
-	if self.anim<.5 then
+	if self.anim<self.animd then
 		return self.sprites.jump[1]
 	else
 		return self.sprites.jump[2]
