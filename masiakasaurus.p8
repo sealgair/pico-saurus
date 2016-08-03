@@ -424,11 +424,23 @@ function fish:init(...)
 	self.super.init(self, ...)
 	self.anim=0
 	self.vel.y=-self.jump
+	world:particles{
+		x=self.x+4, y=self.y+8,
+		color=7,
+		duration=0.1,
+		rate=20,
+	}
 end
 
 function fish:touch(s)
 	if fget(s, sflags.wm) then
 		world:despawn(self)
+		world:particles{
+			x=self.x+4, y=self.y+8,
+			color=7,
+			duration=0.1,
+			rate=20,
+		}
 	end
 end
 
