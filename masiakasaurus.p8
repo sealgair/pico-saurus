@@ -69,6 +69,17 @@ function find(t, item)
 	return nil
 end
 
+-- return a table containing numbers from s (def 1) to e
+function range(e, s, d)
+	local s=s or 1
+	local d=d or 1
+	local r={}
+	for i=s,e,d do
+		add(r,i)
+	end
+	return r
+end
+
 -- randomly choose item from table
 function rndchoice(t)
 	return t[flr(rnd(#t))+1]
@@ -922,7 +933,11 @@ end
 
 -- add an actor to the world
 function world:spawn(actor)
- add(self.actors, actor)
+	if find(self.actors, actor)==nil then
+ 	add(self.actors, actor)
+	else
+		debug('double-spawn '..actor.__name)
+	end
 end
 
 -- remove an actor from the world
@@ -994,10 +1009,12 @@ function world:spawn_critters()
  if self.critterpop[s]==nil or self.critterpop[s]>cn then
 		self.critterpop[s]=cn
 	end
+	local ids=range(#self.spawns.critters)
 	for i=1,self.critterpop[s] do
-		local c=rndchoice(self.spawns.critters)
+		local ci=rndchoice(ids)
+		del(ids, ci)
+		local c=self.spawns.critters[ci]
 		self:spawn(c)
-		del(critters, c)
 	end
 end
 
