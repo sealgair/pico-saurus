@@ -343,12 +343,14 @@ function actor:move()
  local newx=self.x+self.vel.x*dt
  local newy=self.y+self.vel.y*dt
 
+ local hb=self:hitbox()
+
  --check for map collisions (x)
  local dx=-1
- if (self.vel.x>0) dx=self.w*8-1
+ if (self.vel.x>0) dx=hb.w-1
 	self.walled=false
- for x=self.x,newx,sign(self.vel.x) do
-		local c=world:collides(x+dx, self.y, 1, self.h*8-1)
+ for x=hb.x,newx,sign(self.vel.x) do
+		local c=world:collides(x+dx, hb.y, 1, hb.h-1)
   if c then
    newx=x
    self.vel.x=0
@@ -361,10 +363,10 @@ function actor:move()
 
  --check for map collisions (y)
  local dy=-1
- if (self.vel.y>0) dy=self.h*8-1
+ if (self.vel.y>0) dy=hb.h-1
  self.grounded=false
  for y=self.y,newy,sign(self.vel.y) do
-		local c=world:collides(self.x, y+dy, self.w*8-1, 1)
+		local c=world:collides(hb.x, y+dy, hb.w-1, 1)
   if c then
    self.grounded=true
    newy=y
@@ -424,10 +426,20 @@ fish = actor.subclass{
 
 function fish:init(...)
 	self.super.init(self, ...)
+	self.y+=4
 	self.anim=0
 	self.vel.y=-self.jump
+	self:splash()
+end
+
+function fish:hitbox()
+	local b = fish.super.hitbox(self)
+	return box(b.x, b.y, b.w, b.h-4)
+end
+
+function fish:splash()
 	world:particles{
-		x=self.x+4, y=self.y+8,
+		x=self.x+4, y=self.y+4,
 		colors={7,12,1,13},
 		duration=0.1,
 		rate=20,
@@ -437,12 +449,7 @@ end
 function fish:touch(s)
 	if fget(s, sflags.wm) then
 		world:despawn(self)
-		world:particles{
-			x=self.x+4, y=self.y+8,
-			colors={7,12,1,13},
-			duration=0.1,
-			rate=20,
-		}
+		self:splash()
 	end
 end
 
