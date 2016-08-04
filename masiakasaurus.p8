@@ -302,6 +302,8 @@ function actor:init(x,y)
 	self.walled=false
  self.wfp=0 --current pixel of walking animation
  self.wfd=8 --number of pixels per frame of walking animation
+	self.health=4
+ self.pinned=false
 end
 
 function actor:middle()
@@ -332,7 +334,7 @@ function actor:move()
  --upgade graphical stuff :p
  if self.vel.x==0 then
   self.wfp=0
- else
+ elseif self.sprites.walk then
   self.wfp=wrap(
    self.wfp+abs(self.vel.x*dt),
    self.wfd*#self.sprites.walk
@@ -411,6 +413,17 @@ function actor:draw()
  )
 end
 
+function actor:munch(d)
+ local r = min(d, self.health, 0)
+	self.health-=d
+	if self.health<=0 then
+		self.health=0
+		world:despawn(self)
+	end
+	return r
+end
+
+
 --------------------------------
 -- fish class
 
@@ -420,8 +433,10 @@ fish = actor.subclass{
 	sprites={
 		jump={94, 95},
 		flop={110, 111},
+		pinned=110,
 	},
 	animd=.1,
+	critter=true,
 }
 
 function fish:init(...)
@@ -450,10 +465,17 @@ function fish:touch(s)
 	if fget(s, sflags.wm) then
 		world:despawn(self)
 		self:splash()
+	elseif fget(s, sflags.sm) then
+		self.vel.x=0
 	end
 end
 
 function fish:move()
+	if (not self.grounded
+	  and not protagonist.grounded
+			and self.super.hitbox(self):overlaps(protagonist:hitbox())) then
+		self.vel.x+=protagonist.vel.x*.75
+	end
 	self.super.move(self)
  self.anim+=dt
 	if (self.anim>2*self.animd) self.anim=0
@@ -461,10 +483,17 @@ function fish:move()
 end
 
 function fish:sprite()
+	if self.pinned then
+		return self.sprites.pinned
+	end
+	local s=self.sprites.jump
+	if self.grounded then
+		s=self.sprites.flop
+	end
 	if self.anim<self.animd then
-		return self.sprites.jump[1]
+		return s[1]
 	else
-		return self.sprites.jump[2]
+		return s[2]
 	end
 end
 
@@ -486,8 +515,6 @@ function critter:init(...)
 	self.super.init(self, ...)
  self.think=0
 	self.flipped=rnd(1)>.5
-	self.pinned=false
-	self.health=4
 end
 
 function critter:sprite()
@@ -522,16 +549,6 @@ function critter:move()
 	if self.vel.x!=0 then
 		self.flipped=self.vel.x<0
 	end
-end
-
-function critter:munch(d)
- local r = min(d, self.health, 0)
-	self.health-=d
-	if self.health<=0 then
-		self.health=0
-		world:despawn(self)
-	end
-	return r
 end
 
 --------------------------------
