@@ -1,6 +1,9 @@
 pico-8 cartridge // http://www.pico-8.com
 version 8
 __lua__
+-- debug settings
+showstats=false
+
 -- game states:
 -- -1: game over
 -- 0: initial
@@ -102,6 +105,15 @@ function drawdebug()
  for msg in all(debuglog) do
   print(msg)
  end
+end
+
+function drawstats()
+	if showstats then
+		rectfill(0,119, 42,127, 5)
+		local m="#"..flr(stat(0))
+		m=m.."\t%"..flr(stat(1)*100)
+  print(m, 2,121, 10)
+	end
 end
 
 -- useful for iterating between x/y & w/h
@@ -486,12 +498,12 @@ function fish:touch(s)
 end
 
 function fish:move()
+	self.super.move(self)
 	if (not self.grounded
 	  and not protagonist.grounded
 			and self.super.hitbox(self):overlaps(protagonist:hitbox())) then
 		self.vel.x+=protagonist.vel.x*.75
 	end
-	self.super.move(self)
  self.anim+=dt
 	if (self.anim>2*self.animd) self.anim=0
 	self.upsidedown=self.vel.y>=0
@@ -1346,6 +1358,7 @@ function _draw()
 		drawsleep(wakingtime)
 	end
  drawdebug()
+	drawstats()
 end
 __gfx__
 70000007333333331111111100000000000000000000000000000000000000000000000000000000000000000bb0bbb00333033055ee2ee55555555555555555
