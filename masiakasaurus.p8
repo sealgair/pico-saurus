@@ -236,6 +236,7 @@ function partgen:init(args)
 	self.dur=args.duration or maxnum
 	self.rate=args.rate or 10
 	self.pdur=args.partduration or .2
+	self.actor=args.actor
 
 	self.particles={}
 	self.age=0
@@ -251,16 +252,25 @@ function partgen:stop()
 	self.dur=0
 end
 
+function partgen:newpart()
+	local p={
+		x=self.x, y=self.y,
+		c=rndchoice(self.colors),
+		vel={x=rnd(200)-100, y=-rnd(100)},
+		age=0,
+	}
+	if self.actor then
+		p.x+=self.actor.x
+		p.y+=self.actor.y
+	end
+	return p
+end
+
 function partgen:update()
 	if self.age<=self.dur then
 	 self.age+=dt
 		while self.pcount < self.rate*self.age do
-			add(self.particles, {
-				x=self.x, y=self.y,
-				c=rndchoice(self.colors),
-				vel={x=rnd(200)-100, y=-rnd(100)},
-				age=0,
-			})
+			add(self.particles, self:newpart())
 			self.pcount+=1
 		end
 	end
@@ -445,6 +455,11 @@ function fish:init(...)
 	self.anim=0
 	self.vel.y=-self.jump
 	self:splash()
+	world:particles{
+		x=4,y=4, actor=self,
+		colors={7,12,1,13},
+		rate=10,
+	}
 end
 
 function fish:hitbox()
@@ -905,6 +920,11 @@ function world:despawn(actor)
 			self.critterpop[s]-=1
 		end
 		del(self.actors, actor)
+	end
+	for pg in all(self.partgens) do
+		if pg.actor==actor then
+			pg:stop()
+		end
 	end
 end
 
