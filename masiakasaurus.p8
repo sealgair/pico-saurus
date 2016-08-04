@@ -834,6 +834,11 @@ world={
 	partgens={},
  actors={},
 	critterpop={},
+	spawns={
+		critters={},
+		fish={},
+	},
+	nextfish=rnd(10),
 }
 
 function world:makestars(n)
@@ -921,7 +926,7 @@ function world:spawn_protagonist()
 end
 
 -- spawn all visible critters
-function world:spawn_critters()
+function world:findspawns()
  for a in all(self.actors) do
   if a.critter then
    del(world.actors, a)
@@ -929,27 +934,44 @@ function world:spawn_critters()
  end
 
  local b=self:tilebox()
-	local critters={}
+ self.spawns.critters={}
+ self.spawns.fish={}
+
 	-- find the critters on the map
  for x=b.x, b.w+b.x do
   for y=b.y, b.h+b.y do
    local s=mget(x,y)
    if fget(s,sflags.cs) then
-				add(critters, critter(x*self.pixels.w, y*self.pixels.h))
+				add(self.spawns.critters,
+				 critter(x*self.pixels.w, y*self.pixels.h))
 			elseif fget(s,sflags.fs) then
-				add(critters, fish(x*self.pixels.w, y*self.pixels.h))
+				add(self.spawns.fish,
+				 {x=x*self.pixels.w, y=y*self.pixels.h})
    end
   end
  end
+
+	self:spawn_critters()
+end
+
+function world:spawn_critters()
 	-- choose from available based on population
 	local s=self:screenkey()
- if self.critterpop[s]==nil or self.critterpop[s]>#critters then
-		self.critterpop[s]=#critters
+	local cn=#self.spawns.critters
+ if self.critterpop[s]==nil or self.critterpop[s]>cn then
+		self.critterpop[s]=cn
 	end
 	for i=1,self.critterpop[s] do
-		local c=rndchoice(critters)
+		local c=rndchoice(self.spawns.critters)
 		self:spawn(c)
 		del(critters, c)
+	end
+end
+
+function world:spawn_fish()
+	if #self.spawns.fish>0 then
+		local s=rndchoice(self.spawns.fish)
+		self:spawn(fish(s.x, s.y))
 	end
 end
 
@@ -965,6 +987,12 @@ function world:advance(dt)
 		if p:done() then
 			del(self.partgens, p)
 		end
+	end
+
+	self.nextfish-=dt
+	if self.nextfish<=0 then
+		self.nextfish=rnd(7)
+		self:spawn_fish()
 	end
 end
 
@@ -1163,7 +1191,7 @@ end
 
 function _init()
  protagonist=world:spawn_protagonist()
- world:spawn_critters()
+ world:findspawns()
 	world:makestars(128)
 	daytime=0
 	wakingtime=0
@@ -1190,7 +1218,7 @@ function _update60()
  elseif gamestate==2 then
   if world:translate() then
    gamestate=1
-   world:spawn_critters()
+   world:findspawns()
   else
    return
   end
