@@ -866,6 +866,7 @@ world={
 		fish={},
 	},
 	nextfish=rnd(10),
+	prespawn={},
 }
 
 function world:makestars(n)
@@ -1003,7 +1004,13 @@ end
 function world:spawn_fish()
 	if #self.spawns.fish>0 then
 		local s=rndchoice(self.spawns.fish)
-		self:spawn(fish(s.x, s.y))
+		s.pre=.5
+		add(self.prespawn, s)
+		self:particles{
+			x=s.x+4, y=s.y+8, colors={7},
+			duration=s.pre,
+			rate=5,
+		}
 	end
 end
 
@@ -1018,6 +1025,14 @@ function world:advance(dt)
 		p:update(dt)
 		if p:done() then
 			del(self.partgens, p)
+		end
+		for s in all(self.prespawn) do
+			s.pre-=dt
+			if s.pre<=0 then
+				s.pre=nil
+				self:spawn(fish(s.x, s.y))
+				del(self.prespawn, s)
+			end
 		end
 	end
 
