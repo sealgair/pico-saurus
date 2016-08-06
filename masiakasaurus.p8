@@ -566,7 +566,7 @@ critter = actor.subclass{
 
 function critter:init(...)
 	actor.init(self, ...)
- self.think=0
+ self.nextthink=0
 	self.flipped=rnd(1)>.5
 end
 
@@ -577,23 +577,26 @@ function critter:sprite()
  return actor.sprite(self)
 end
 
-function critter:move()
-	if self.pinned then return end
-
- local pb = protagonist:hitbox().b
+function critter:think()
+	local pb = protagonist:hitbox().b
 	local d = protagonist:middle().x - self:middle().x
 	if pb>=self.y and pb<=self:hitbox().b and abs(d) < 64 then
 		self.vel.x=-sign(d)*self.run.m
-		self.think=1
+		self.nextthink=1
 	else
-	 self.think-=dt
-	 if self.think<=0 then
-	  self.vel.x=self.run.m*(flr(rnd(3))-1)
-			 -- seconds until next movement direction needs choosing
-	  self.think=rnd(1.5)+.5
-	 end
+		self.nextthink-=dt
+		if self.nextthink<=0 then
+			self.vel.x=self.run.m*(flr(rnd(3))-1)
+				-- seconds until next movement direction needs choosing
+			self.nextthink=rnd(1.5)+.5
+		end
 	end
+end
 
+function critter:move()
+	if self.pinned then return end
+
+	self:think()
  actor.move(self)
 
 	if self.walled then
@@ -609,6 +612,7 @@ end
 
 rahonavis = critter.subclass{
 	__name="rahonavis",
+ run={m=80},
  sprites={
   stand=76,
   walk={76, 77},
@@ -619,6 +623,19 @@ rahonavis = critter.subclass{
 function rahonavis:init(...)
 	critter.init(self, ...)
 	self.health=16
+end
+
+function rahonavis:think()
+	local pm=protagonist:middle()
+	local d=pm.x-self:middle().x
+	self.vel.x=sign(d)*self.run.m
+end
+
+function rahonavis:move()
+	critter.move(self)
+	if not self.pinned and self:hitbox():overlaps(protagonist:hitbox()) then
+		protagonist:munch(dt)
+	end
 end
 
 --------------------------------
@@ -658,6 +675,12 @@ function player:init(...)
 		water=.8,
 		sleep=1,
 	}
+end
+
+function player:munch(d)
+	self.health=self.stats.health*10
+	actor.munch(self, d)
+	self.stats.health=self.health/10
 end
 
 function player:sprite()
