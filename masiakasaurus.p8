@@ -38,7 +38,9 @@ function class(proto, base)
 	setmetatable(proto, {
 		__index = base,
 		__call = function(cls, ...)
-			local self = setmetatable({}, proto)
+			local self = setmetatable({
+				type=proto
+			}, proto)
 			if(self.init) self:init(...)
 			return self
 		end
@@ -617,24 +619,80 @@ rahonavis = critter.subclass{
   stand=76,
   walk={76, 77},
 		pinned=93,
+		struggle={93, 92},
+		eat=75,
  },
 }
 
 function rahonavis:init(...)
 	critter.init(self, ...)
-	self.health=16
+	self.health=12
+	self.eating=false
+end
+
+function rahonavis:sprite()
+	if self.target and self.target!=protagonist then
+		return self.sprites.eat
+	else
+		return critter.sprite(self)
+	end
+end
+
+function rahonavis:mouth()
+	local x=6
+	if self.flipped then x=2 end
+	return {
+		x=self.x+x,
+		y=flr(self.y)+8,
+	}
 end
 
 function rahonavis:think()
-	local pm=protagonist:middle()
-	local d=pm.x-self:middle().x
-	self.vel.x=sign(d)*self.run.m
+	local ids=range(#world.actors)
+	while self.target==nil and #ids>0 do
+		local t=rndchoice(ids)
+		del(ids, t)
+		if world.actors[t].type!=rahonavis then
+			self.target=world.actors[t]
+		end
+	end
+	self.vel.x=0
+	if self.target then
+		local tm=self.target:middle()
+		local d=tm.x-self:middle().x
+		if abs(d)>4 then
+			self.vel.x=sign(d)*self.run.m
+		end
+	end
 end
 
 function rahonavis:move()
 	critter.move(self)
-	if not self.pinned and self:hitbox():overlaps(protagonist:hitbox()) then
-		protagonist:munch(dt)
+	if not self.pinned and self.target and self:hitbox():overlaps(self.target:hitbox()) then
+		if self.target.critter then
+			self.target.pinned=true
+		end
+		self.target:munch(dt)
+
+		if self.eatparts==nil then
+			local args=self:mouth()
+			args.colors={8,8,14}
+			args.rate=20
+			self.eatparts=world:particles(args)
+		end
+
+		if self.target.health<=0 then
+			self.target=nil
+		end
+	elseif self.eatparts!=nil then
+		self.eatparts:stop()
+		self.eatparts=nil
+	end
+
+	if self.eatparts then
+		local m=self:mouth()
+		self.eatparts.x=m.x
+		self.eatparts.y=m.y
 	end
 end
 
@@ -1108,7 +1166,7 @@ function world:advance(dt)
 			del(self.partgens, p)
 		end
 		for s in all(self.prespawn) do
-			s.pre-=dt
+			if s.pre!=nil then s.pre-=dt end
 			if s.pre<=0 then
 				s.pre=nil
 				self:spawn(fish(s.x, s.y))
@@ -1492,12 +1550,12 @@ __gfx__
 ddd00000000dd0000000000000000000ddd000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 0ffddd0000ddbd5000000000000000000ffddd000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 000fffdddddff556ddd00000000dd000000fffdddddddd0000000000000000000000000000000000000000000000000000000180000018000000000000000000
-00000ffffdd000600ffddd0000ddbd5000000ffffddfddd00000000000000000000000000000000000000000000000001000011a100011a00000000000000000
-00000666ddd00000000fffdddddff55600000666fddfbdd0000000000000000000000000000000000000000000000000d1111100d11111000000000000000000
-0000666f0000000000000ffffdd000600000666fdd0565000000000000000000000000000000000000000000000000000dd111100dd1111000000000f0000000
-000066550000000000000666ddd0000000006655006650000000000000000000000000000000000000000000000000000056601000666510f00440000f054e00
-000006655000000000000665500000000000066550ee600000000000000000000000000000000000000000000000000000f56a00006a59000f456e0000444000
-0000000000000000ddd00000000dd000000000000000000800000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000ffffdd000600ffddd0000ddbd5000000ffffddfddd00000000000000000000000000000000000000000100000001000011a100011a00000000000000000
+00000666ddd00000000fffdddddff55600000666fddfbdd00000000000000000000000000000000000000000d1111100d1111100d11111000000000000000000
+0000666f0000000000000ffffdd000600000666fdd05650000000000000000000000000000000000000000000dd111100dd111100dd1111000000000f0000000
+000066550000000000000666ddd0000000006655006650000000000000000000000000000000000000000000006111800056601000666510f00440000f054e00
+000006655000000000000665500000000000066550ee6000000000000000000000000000000000000000000000561a0000f56a00006a59000f456e0000444000
+0000000000000000ddd00000000dd000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 dddd0000000dd0000ffddd0000ddbd50ddd0000000dbd56000000000000000000000000000000000000000000000000000000000000000000000600000060000
 0fffddddddddbd50000fffdddddff5560ffddd000dddd5ee00000000000000000000000000000000000000000000000000000000000000000000a500006a0000
 0000ffffddfff55600000ffffdd00060000fffddddfff66e00000000000000000000000000000000000000000000000000000000000000000000650000650000
