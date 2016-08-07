@@ -437,6 +437,10 @@ function actor:overlaps(a)
 	return self:hitbox():overlaps(a:hitbox())
 end
 
+function actor:cansee(other)
+ return not world:linecollides(self:middle(), other:middle())
+end
+
 function actor:sprite()
  if self.sprites.jump then
 	 if self.vel.y>0 then
@@ -648,12 +652,22 @@ function rahonavis:mouth()
 end
 
 function rahonavis:think()
+	critter.think(self)
 	local ids=range(#world.actors)
+	if self.target and not self:cansee(self.target) then
+		self.target=nil
+	end
 	while self.target==nil and #ids>0 do
 		local t=rndchoice(ids)
 		del(ids, t)
 		self.target=world.actors[t]
 		if self.target.type==rahonavis then
+			self.target=nil
+		elseif (self.target.y < self.y-4
+				or self.target.y > self.target.y+32
+				or abs(self.target.x-self.x) > 32) then
+			self.target=nil
+		elseif not self:cansee(self.target) then
 			self.target=nil
 		end
 	end
@@ -1171,7 +1185,8 @@ function world:advance(dt)
 			del(self.partgens, p)
 		end
 		for s in all(self.prespawn) do
-			if s.pre!=nil then s.pre-=dt end
+			if s.pre==nil then pre=0  end
+			s.pre-=dt
 			if s.pre<=0 then
 				s.pre=nil
 				self:spawn(fish(s.x, s.y))
@@ -1206,6 +1221,29 @@ function world:collides(x,y,w,h, flag)
   end
  end
  return false
+end
+
+function world:linecollides(p1, p2, flag)
+	flag = flag or sflags.sm
+	local dx=(p1.x-p2.x)/8
+	local dy=(p1.y-p2.y)/8
+	local s=dy/dx
+	local a=0 z=0 i=0 lmget=false
+	if dx>dy then
+		a=flr(p1.x) z=flr(p2.x) i=sign(dx)
+		lmget=function(x) return mget(x, flr(x*s)) end
+	else
+	 a=flr(p1.y) z=flr(p2.y) i=sign(dy)
+		lmget=function(y) return mget(flr(y/s), y) end
+	end
+
+	for c=a,z,i do
+		local spr=lmget(c)
+		if fget(spr,flag) then
+			return spr
+		end
+	end
+	return false
 end
 
 -- check whether point is outside bounds
@@ -1336,6 +1374,13 @@ function world:draw()
   end
 		pal()
  end
+
+	function world:print(msg, x, y, c)
+		local o=self:offset()
+		x-=o.x
+		y-=o.y
+		print(msg, x,y, c)
+	end
 
  -- do the actual drawing
  drawmaps(mlayer(sflags.mb, sflags.sm)) -- background
@@ -1814,4 +1859,3 @@ __music__
 00 41424344
 00 41424344
 00 41424344
-
