@@ -119,10 +119,11 @@ end
 
 function drawstats()
 	if showstats then
-		rectfill(0,119, 42,127, 5)
+		rectfill(0,120, 54,127, 5)
 		local m="#"..flr(stat(0))
 		m=m.."\t%"..flr(stat(1)*100)
-  print(m, 2,121, 10)
+		m=m.."\ta:"..#world.actors
+  print(m, 2,122, 10)
 	end
 end
 
@@ -1109,7 +1110,10 @@ end
 function world:findspawns()
  for a in all(self.actors) do
   if a.critter then
-   del(world.actors, a)
+		 local b=world:checkbounds(a:middle())
+			if b.x+b.y!=0 then
+	   del(world.actors, a)
+			end
   end
  end
 	for p in all(self.partgens) do
@@ -1185,7 +1189,7 @@ function world:advance(dt)
 			del(self.partgens, p)
 		end
 		for s in all(self.prespawn) do
-			if s.pre==nil then pre=0  end
+			if s.pre==nil then s.pre=0  end
 			s.pre-=dt
 			if s.pre<=0 then
 				s.pre=nil
@@ -1268,6 +1272,15 @@ function world:checkbounds(p)
  end
 
  return res
+end
+
+-- wrap a coordinate point around the map
+function world:wrappoint(p)
+	local w=self.screens.w*self.tiles.w*self.pixels.w
+	local h=self.screens.h*self.tiles.h*self.pixels.h
+	p.x=wrap(p.x, w)
+	p.y=wrap(p.y, h)
+	return p
 end
 
 -- move viewport to next screen
@@ -1432,6 +1445,8 @@ function _init()
 	daytime=0
 	wakingtime=0
 	sleeptime=0
+
+	fading={}
 end
 
 -- so that the web player works
@@ -1481,7 +1496,18 @@ function _update60()
 		  gamestate=2
 		  world:translate(b)
 			else
-				del(world.actors, a)
+				if fading[a] == nil then
+					fading[a]=1
+					local pa=world:wrappoint{x=a.x,y=a.y}
+					a.x=pa.x
+					a.y=pa.y
+				else
+					fading[a]-=dt
+					if fading[a]<=0 then
+						del(world.actors, a)
+						fading[a]=nil
+					end
+				end
 			end
 	 end
  end
