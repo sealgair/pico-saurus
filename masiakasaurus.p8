@@ -536,6 +536,7 @@ function fish:move()
 	  and not protagonist.grounded
 			and actor.hitbox(self):overlaps(protagonist:hitbox())) then
 		self.vel.x+=protagonist.vel.x*.75
+		self.vel.y+=abs(protagonist.vel.x)*.5
 	end
  self.anim+=dt
 	if (self.anim>2*self.animd) self.anim=0
