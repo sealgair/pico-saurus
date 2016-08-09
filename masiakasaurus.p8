@@ -221,6 +221,13 @@ function box:init(l,t,w,h)
 	self.b=t+h
 end
 
+function box:middle()
+	return {
+		x=self.x+self.w/2,
+		y=self.y+self.h/2,
+	}
+end
+
 -- box contains point
 function box:contains(p)
 	return (
@@ -634,10 +641,14 @@ function rahonavis:init(...)
 	critter.init(self, ...)
 	self.health=12
 	self.eating=false
+	self.direction=1
+	if self.x>world:pixelbox():middle().x then
+		self.direction=-1
+	end
 end
 
 function rahonavis:sprite()
-	if self.target and self.target.pinned then
+	if self.eating then
 		return self.sprites.eat
 	else
 		return critter.sprite(self)
@@ -654,58 +665,41 @@ function rahonavis:mouth()
 end
 
 function rahonavis:think()
-	critter.think(self)
-	local ids=range(#world.actors)
-	if self.target and not self:cansee(self.target) then
-		self.target=nil
+	if self.walled then
+		self.direction*=-1
 	end
-	while self.target==nil and #ids>0 do
-		local t=rndchoice(ids)
-		del(ids, t)
-		self.target=world.actors[t]
-		if self.target.type==rahonavis then
-			self.target=nil
-		elseif (self.target.y < self.y-4
-				or self.target.y > self.target.y+32
-				or abs(self.target.x-self.x) > 32) then
-			self.target=nil
-		elseif not self:cansee(self.target) then
-			self.target=nil
-		end
-	end
-	self.vel.x=0
-	if self.target then
-		local tm=self.target:middle()
-		local d=tm.x-self:middle().x
-		if abs(d)>4 then
-			self.vel.x=sign(d)*self.run.m
-			if self.target==protagonist and self.target.flipped==(d>0) then
-				self.vel.x*=-1
-			end
-		end
+	if self.eating then
+		self.vel.x=0
+	else
+ 	self.vel.x=self.run.m*self.direction
 	end
 end
 
 function rahonavis:move()
 	critter.move(self)
-	if (not self.pinned and self.target
-			and self:overlaps(self.target)) then
-		if self.target.critter then
-			self.target.pinned=true
-		end
-		self.target:munch(dt)
+	self.eating=false
 
-		if self.eatparts==nil then
-			local args=self:mouth()
-			args.colors={8,8,14}
-			args.rate=20
-			self.eatparts=world:particles(args)
-		end
 
-		if self.target.health<=0 then
-			self.target=nil
+	if not self.pinned then
+		for actor in all(world.actors) do
+			if actor.type!=rahonavis and actor:overlaps(self) then
+				self.eating=true
+				actor:munch(dt)
+				if actor.health<=0 then
+					self.direction=rndchoice({1,-1})
+				end
+
+				if self.eatparts==nil then
+					local args=self:mouth()
+					args.colors={8,8,14}
+					args.rate=20
+					self.eatparts=world:particles(args)
+				end
+				break
+			end
 		end
-	elseif self.eatparts!=nil then
+	end
+	if not self.eating and self.eatparts then
 		self.eatparts:stop()
 		self.eatparts=nil
 	end
@@ -1036,12 +1030,12 @@ end
 
 function world:pixelbox()
  local b=self:tilebox()
- return {
-  x=b.x*self.pixels.w,
-  y=b.y*self.pixels.h,
-  w=b.w*self.pixels.w,
-  h=b.h*self.pixels.h,
- }
+ return box(
+  b.x*self.pixels.w,
+  b.y*self.pixels.h,
+  b.w*self.pixels.w,
+  b.h*self.pixels.h
+ )
 end
 
 -- pixel offset of the screen
