@@ -5,12 +5,15 @@ __lua__
 showstats=false
 
 -- game states:
--- -1: game over
--- 0: initial
--- 1: playing
--- 2: swapping screens
--- 3: sleeping
-gamestate=0
+gs={
+	gameover=-1,
+	init=0,
+	play=1,
+	slide=2,
+	sleep=3,
+}
+
+gamestate=gs.init
 
 -- sprite flags
 sflags={
@@ -1468,29 +1471,29 @@ function _update()
 end
 
 function _update60()
-	if gamestate==-1 then return end
- if gamestate==0 then
+	if gamestate==gs.gameover then return end
+ if gamestate==gs.init then
   if btnp(4) or btnp(5) then
-   gamestate=1
+   gamestate=gs.play
 		 music(0)
   else
    return
   end
-	elseif gamestate==1 then
+	elseif gamestate==gs.play then
 		world:advance(dt)
- elseif gamestate==2 then
+ elseif gamestate==gs.slide then
   if world:translate() then
-   gamestate=1
+   gamestate=gs.play
    world:findspawns()
   else
    return
   end
-	elseif gamestate==3 then
+	elseif gamestate==gs.sleep then
 		local sdt=dt*10
 		sleeptime+=dt
 		world:advance(sdt)
 		if protagonist:snooze(sdt) then
-			gamestate=1
+			gamestate=gs.play
 			sleeptime=0
 			wakingtime=.5
 		end
@@ -1505,7 +1508,7 @@ function _update60()
 	 local b=world:checkbounds(a:middle())
 	 if b.x!=0 or b.y!=0 then
 			if a==protagonist then
-		  gamestate=2
+		  gamestate=gs.slide
 		  world:translate(b)
 			else
 				if fading[a] == nil then
@@ -1527,9 +1530,9 @@ function _update60()
 	protagonist:age(dt)
 
 	if protagonist.stats.health<=0 then
-		gamestate=-1
+		gamestate=gs.gameover
 	elseif protagonist.sleeping then
-		gamestate=3
+		gamestate=gs.sleep
 	end
 end
 
@@ -1582,16 +1585,16 @@ function drawsleep(time)
 end
 
 function _draw()
-	if gamestate==-1 then
+	if gamestate==gs.gameover then
 		drawgameover()
 		return
 	end
  world:draw({x=0, y=16})
  drawhud()
- if gamestate==0 then
+ if gamestate==gs.init then
 		drawsplash()
  end
-	if gamestate==3 then
+	if gamestate==gs.sleep then
 		drawsleep(min(sleeptime/2, .8))
 	elseif wakingtime > 0 then
 		drawsleep(wakingtime)
