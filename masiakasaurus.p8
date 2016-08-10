@@ -1230,6 +1230,18 @@ function world:morning()
 	end
 end
 
+-- player has gone to sleep
+function world:startsleep()
+	for a in all(self.actors) do
+		if a!=protagonist then
+			del(self.actors, a)
+		end
+	end
+	for pg in all(self.partgens) do
+		pg:stop()
+	end
+end
+
 -- check for collisions in box
 function world:collides(x,y,w,h, flag)
 	flag = flag or sflags.sm
@@ -1535,6 +1547,7 @@ function _update60()
 		gamestate=gs.gameover
 	elseif protagonist.sleeping then
 		gamestate=gs.sleep
+		world:startsleep()
 	end
 end
 
