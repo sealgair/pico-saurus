@@ -834,7 +834,7 @@ end
 
 function player:move()
 	if self.sleeping then return end
-	
+
  if btn(self.btn.l) then
   self.flipped=true
  elseif btn(self.btn.r) then
@@ -1200,7 +1200,7 @@ function world:spawn_critters()
 	local s=self:screenkey()
 	local cn=#self.spawns.critters
  if self.critterpop[s]==nil or self.critterpop[s]>cn then
-		self.critterpop[s]=cn
+		self.critterpop[s]=3
 	end
 	local ids=range(#self.spawns.critters)
 	for i=1,self.critterpop[s] do
