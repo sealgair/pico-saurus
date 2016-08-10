@@ -478,13 +478,21 @@ function actor:draw()
  )
 end
 
-function actor:munch(d)
- local r = min(d, self.health, 0)
+-- a hook to perform actions when an actor gets hurt
+-- calls despawn if health runs out
+function actor:hurt(d)
 	self.health-=d
 	if self.health<=0 then
 		self.health=0
 		world:despawn(self)
 	end
+end
+
+-- hurt for (at most) d damage, return actual amount hurt
+-- (so that munching actor can gain health)
+function actor:munch(d)
+ local r = min(d, self.health, 0)
+	self:hurt(d)
 	return r
 end
 
@@ -803,6 +811,12 @@ function player:sprite()
  return actor.sprite(self)
 end
 
+-- is player standing on water
+function player:onwater()
+	local m=self:mouth()
+	return world:collides(m.x, m.y+1, 1, 1, sflags.wm)
+end
+
 -- coords of my mouth
 function player:mouth()
 	local c=self:middle()
@@ -837,7 +851,7 @@ function player:move()
 	if self.crouched then
 		if self.sleepcount==nil then
 			self.sleepcount=0
-		else
+		elseif not self:onwater() then
 			self.sleepcount+=dt
 			if self.sleepcount>3 then
 				self.sleepcount=nil
@@ -859,6 +873,10 @@ function player:move()
   end
  end
 
+	if not self.crouched then
+		self.sleepcount=0
+	end
+
  -- drink/eat
 	self.eating=false
 	self.drinking=false
@@ -867,7 +885,7 @@ function player:move()
 		if #self.food>0 then
 			self.eating=true
 			self:eat()
-		elseif world:collides(m.x, m.y+1, 1, 1, sflags.wm) then
+		elseif self:onwater() then
 			self.drinking=true
 			self:drink()
 		end
@@ -911,6 +929,12 @@ function player:move()
 			end
 		end
 	end
+end
+
+-- reset sleep counter if player gets hurt
+function player:hurt(d)
+	actor.hurt(self, d)
+	self.sleepcount=0
 end
 
 -- decrement stats
