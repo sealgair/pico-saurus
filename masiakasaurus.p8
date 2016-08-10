@@ -766,7 +766,7 @@ function player:init(...)
 		health=1,
 		food=.6,
 		water=.8,
-		sleep=1,
+		sleep=.7,
 	}
 end
 
@@ -1214,10 +1214,12 @@ function world:advance(dt)
 		end
 	end
 
-	self.nextfish-=dt
-	if self.nextfish<=0 then
-		self.nextfish=rnd(7)
-		self:spawn_fish()
+ if gamestate!=gs.sleep then
+		self.nextfish-=dt
+		if self.nextfish<=0 then
+			self.nextfish=rnd(7)
+			self:spawn_fish()
+		end
 	end
 end
 
