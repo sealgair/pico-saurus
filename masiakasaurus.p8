@@ -938,6 +938,9 @@ end
 function player:hurt(d)
 	actor.hurt(self, d)
 	self.sleepcount=0
+	if self.sleeptime!=nil then
+		self.sleeptime+=d*10
+	end
 end
 
 -- decrement stats
@@ -1254,7 +1257,7 @@ function world:advance(dt)
 
 
 	if self.nextdanger==nil then
-		self.nextdanger=10+rnd(30)
+		self.nextdanger=5+rnd(25)
 	end
 	self.nextdanger-=dt
 	if self.nextdanger<=0 then
