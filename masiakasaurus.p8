@@ -833,6 +833,8 @@ function player:mouth()
 end
 
 function player:move()
+	if self.sleeping then return end
+	
  if btn(self.btn.l) then
   self.flipped=true
  elseif btn(self.btn.r) then
