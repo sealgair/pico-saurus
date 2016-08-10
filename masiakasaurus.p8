@@ -332,6 +332,8 @@ end
 actor = class{
  __name="actor",
 	w=1, h=1,
+	danger=false,
+	critter=false,
 }
 
 function actor:init(x,y)
@@ -648,6 +650,7 @@ rahonavis = critter.subclass{
 		eat=75,
 		jump=91
  },
+	danger=true,
 }
 
 function rahonavis:init(...)
@@ -1108,14 +1111,14 @@ function world:spawn(actor)
 	if find(self.actors, actor)==nil then
  	add(self.actors, actor)
 	else
-		debug('double-spawn '..actor.__name)
+		debug('double spawn '..actor.__name)
 	end
 end
 
 -- remove an actor from the world
 function world:despawn(actor)
-	if find(self.actors, actor) != nil then
-		if actor.critter then
+	if find(self.actors, actor)!=nil then
+		if actor.type==critter then
 			local s=self:screenkey()
 			self.critterpop[s]-=1
 		end
@@ -1162,6 +1165,7 @@ function world:findspawns()
 
  local b=self:tilebox()
  self.spawns.critters={}
+	self.spawns.danger={}
  self.spawns.fish={}
 
 	-- find the critters on the map
@@ -1169,13 +1173,13 @@ function world:findspawns()
   for y=b.y, b.h+b.y do
    local s=mget(x,y)
    if fget(s,sflags.cs) then
-				local c
 				if rahonavis:spriteset()[s] then
-					c=rahonavis(x*self.pixels.w, y*self.pixels.h)
+					add(self.spawns.danger,
+					 {x=x*self.pixels.w, y=y*self.pixels.h, type=rahonavis})
 				else
-					c=critter(x*self.pixels.w, y*self.pixels.h)
+					add(self.spawns.critters,
+					 critter(x*self.pixels.w, y*self.pixels.h))
 				end
-				add(self.spawns.critters, c)
 			elseif fget(s,sflags.fs) then
 				add(self.spawns.fish,
 				 {x=x*self.pixels.w, y=y*self.pixels.h})
@@ -1199,6 +1203,16 @@ function world:spawn_critters()
 		del(ids, ci)
 		local c=self.spawns.critters[ci]
 		self:spawn(c)
+	end
+	if rnd()>.5 then
+		self:spawn_danger()
+	end
+end
+
+function world:spawn_danger()
+	local c=rndchoice(self.spawns.danger)
+	if c then
+		self:spawn(c.type(c.x, c.y))
 	end
 end
 
@@ -1238,11 +1252,51 @@ function world:advance(dt)
 		end
 	end
 
- if gamestate!=gs.sleep then
+
+	if self.nextdanger==nil then
+		self.nextdanger=10+rnd(30)
+	end
+	self.nextdanger-=dt
+	if self.nextdanger<=0 then
+		self.nextdanger=nil
+		self:spawn_danger()
+	end
+	if gamestate!=gs.sleep then
 		self.nextfish-=dt
 		if self.nextfish<=0 then
 			self.nextfish=rnd(7)
 			self:spawn_fish()
+		end
+	end
+
+	world:move_actors()
+end
+
+function world:move_actors()
+	for a in all(self.actors) do
+		a:move()
+		local b=self:checkbounds(a:middle())
+		if b.x!=0 or b.y!=0 then
+			if a==protagonist then
+				gamestate=gs.slide
+				self:translate(b)
+			else
+				if fading[a] == nil then
+					fading[a]=1
+					if gamestate==gs.sleep then
+						fading[a]=0
+					end
+					local pa=self:wrappoint{x=a.x,y=a.y}
+					a.x=pa.x
+					a.y=pa.y
+				else
+					fading[a]-=dt
+					if fading[a]<=0 then
+						del(world.actors, a)
+						fading[a]=nil
+					end
+				end
+			end
 		end
 	end
 end
@@ -1541,29 +1595,6 @@ function _update60()
 		wakingtime-=dt
 	end
 
- for a in all(world.actors) do
-  a:move()
-	 local b=world:checkbounds(a:middle())
-	 if b.x!=0 or b.y!=0 then
-			if a==protagonist then
-		  gamestate=gs.slide
-		  world:translate(b)
-			else
-				if fading[a] == nil then
-					fading[a]=1
-					local pa=world:wrappoint{x=a.x,y=a.y}
-					a.x=pa.x
-					a.y=pa.y
-				else
-					fading[a]-=dt
-					if fading[a]<=0 then
-						del(world.actors, a)
-						fading[a]=nil
-					end
-				end
-			end
-	 end
- end
 	protagonist:findfood(world.actors)
 	protagonist:age(dt)
 
@@ -1593,6 +1624,10 @@ function drawgameover()
 end
 
 function drawsleep(time)
+	print("nappin'", 4,20, 8)
+end
+
+function _drawsleep(time)
 	local o=world:offset()
 	local pb=protagonist:hitbox()
 	pb=box(
