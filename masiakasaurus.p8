@@ -1629,38 +1629,10 @@ function drawgameover()
 end
 
 function drawsleep(time)
-	print("nappin'", 4,20, 8)
-end
-
-function _drawsleep(time)
-	local o=world:offset()
-	local pb=protagonist:hitbox()
-	pb=box(
-		pb.x-pb.w-o.x,
-		pb.y-pb.h-o.y,
-		pb.w*3, pb.h*3
-	)
-	local pm={
-		x=pb.x+pb.w/2,
-		y=pb.y+pb.h/2,
-	}
-	local c={5,6}
-	for x=0,127 do
-		for y=16,127 do
-			local r=rnd()
-			if pb:contains({x=x,y=y}) then
-				local dx=(x-pm.x)/(pb.w/2)
-				local dy=(y-pm.y)/(pb.h/2)
-				if dx*dx+dy*dy < 1 then
-					r=time
-				end
-			end
-			if r<time then
-				r=r*1/time
-				pset(x,y,c[flr(r*#c)+1])
-			end
-		end
-	end
+	local c=5
+	if (isnight()) c=6
+	local p=protagonist:middle()
+	world:print("ZZZ", p.x-4, p.y-8, c)
 end
 
 function _draw()
