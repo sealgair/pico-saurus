@@ -932,6 +932,10 @@ function player:move()
 		if #self.food>0 then
 			self.eating=true
 			self:eat()
+		elseif world:actorcollides(self, sflags.cn) then
+			self.eating=true
+			self.stats.food+=dt*.05
+			self.stats.water+=dt*.025
 		elseif self:onwater() then
 			self.drinking=true
 			self:drink()
@@ -1201,7 +1205,7 @@ function world:findspawns()
 	-- should this screen have carrion
 	local s=self:screenkey()
 	if self.carrion[s]==nil then
-		self.carrion[s]=rnd()>0.5
+		self.carrion[s]=rnd()>0.05
 	end
 
  for a in all(self.actors) do
@@ -1378,6 +1382,12 @@ function world:startsleep()
 	for pg in all(self.partgens) do
 		pg:stop()
 	end
+end
+
+-- check for collisions in actor
+function world:actorcollides(a, flag)
+ local hb=a:hitbox()
+	return self:collides(hb.x, hb.y, hb.w, hb.h, flag)
 end
 
 -- check for collisions in box
