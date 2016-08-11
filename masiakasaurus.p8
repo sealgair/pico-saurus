@@ -759,6 +759,25 @@ majungasaurus = critter.subclass{
 	h=2,
 }
 
+function majungasaurus:move()
+	critter.move(self)
+	if self:overlaps(protagonist) then
+		local mm=self:middle()
+		local pm=protagonist:middle()
+		local dx=mm.x-pm.x
+		protagonist.vel.x=-sign(dx)*200
+		protagonist.vel.y-=80
+		protagonist:munch(3)
+		world:particles{
+			x=(mm.x+pm.x)/2,
+			y=(mm.y+pm.y)/2,
+			color=8,
+			duration=0.2,
+			rate=500
+		}
+	end
+end
+
 function majungasaurus:legsprite()
 	if self.vel.x!=0 then
 		local wf=flr(self.wfp/self.wfd)+1
