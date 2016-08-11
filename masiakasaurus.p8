@@ -20,6 +20,7 @@ sflags={
  sm=0, -- solid map
  mf=1, -- map foreground
  mb=2, -- map background
+	cn=3, -- carrion
 	wm=4, -- water map tile
  fs=6, -- edible fish spawn
  cs=7, -- edible critter spawn
@@ -1099,6 +1100,7 @@ world={
 	},
 	nextfish=rnd(10),
 	prespawn={},
+	carrion={},
 }
 
 function world:makestars(n)
@@ -1196,6 +1198,12 @@ end
 
 -- spawn all visible critters
 function world:findspawns()
+	-- should this screen have carrion
+	local s=self:screenkey()
+	if self.carrion[s]==nil then
+		self.carrion[s]=rnd()>0.5
+	end
+
  for a in all(self.actors) do
   if a.critter then
 		 local b=world:checkbounds(a:middle())
@@ -1220,9 +1228,9 @@ function world:findspawns()
    local s=mget(x,y)
    if fget(s,sflags.cs) then
 				if majungasaurus:spriteset()[s] then
-					self:spawn(majungasaurus(x*self.pixels.w, y*self.pixels.h))
-					-- add(self.spawns.danger,
-					--  {x=x*self.pixels.w, y=y*self.pixels.h, type=majungasaurus})
+					if self.carrion[self:screenkey()] then
+						self:spawn(majungasaurus(x*self.pixels.w, y*self.pixels.h))
+					end
 				elseif rahonavis:spriteset()[s] then
 					add(self.spawns.danger,
 					 {x=x*self.pixels.w, y=y*self.pixels.h, type=rahonavis})
@@ -1356,6 +1364,8 @@ function world:morning()
 	for s,p in pairs(self.critterpop) do
 		self.critterpop[s]=p+2
 	end
+	-- reset whether any tile has carrion
+	self.carrion={}
 end
 
 -- player has gone to sleep
@@ -1498,6 +1508,13 @@ function world:drawsky()
 	end
 end
 
+function world:print(msg, x, y, c)
+	local o=self:offset()
+	x-=o.x
+	y-=o.y
+	print(msg, x,y, c)
+end
+
 function world:draw()
 	self:drawsky()
  local tb=self:tilebox()
@@ -1545,15 +1562,14 @@ function world:draw()
 		pal()
  end
 
-	function world:print(msg, x, y, c)
-		local o=self:offset()
-		x-=o.x
-		y-=o.y
-		print(msg, x,y, c)
-	end
-
  -- do the actual drawing
- drawmaps(mlayer(sflags.mb, sflags.sm)) -- background
+	local bgl
+	if not wrapping and self.carrion[self:screenkey()] then
+		bgl=mlayer(sflags.mb, sflags.sm, sflags.cn)
+	else
+		bgl=mlayer(sflags.mb, sflags.sm)
+	end
+	drawmaps(bgl) -- background
  for a in reverse(self.actors) do
   a:draw()
  end
@@ -1859,7 +1875,7 @@ dddd0000000dd0000ffddd0000ddbd50dddd00000000000000000000ccc0004555cccccc00000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 __gff__
-0001110000000000000000020400000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000080000000000080808080000000000000000000000000000040400000000000000000000000000000404000000000000000000000000004040000
+0001110000000000000000020400000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000080000000000080808080000000000000000000000000000040400000000000000000000000000000404000000000000000000000000008080000
 0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 __map__
 0100000001010101010101010101010101010101004c00000101010101010101010101010101010000010101010101010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
@@ -2024,4 +2040,3 @@ __music__
 00 41424344
 00 41424344
 00 41424344
-
