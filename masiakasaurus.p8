@@ -767,14 +767,17 @@ function majungasaurus:move()
 		local dx=mm.x-pm.x
 		protagonist.vel.x=-sign(dx)*200
 		protagonist.vel.y-=80
-		protagonist:munch(3)
-		world:particles{
-			x=(mm.x+pm.x)/2,
-			y=(mm.y+pm.y)/2,
-			color=8,
-			duration=0.2,
-			rate=500
-		}
+
+		if protagonist.y>self.y+8 and self.flipped==(dx>0) then
+			protagonist:munch(3)
+			world:particles{
+				x=(mm.x+pm.x)/2,
+				y=(mm.y+pm.y)/2,
+				color=8,
+				duration=0.2,
+				rate=500,
+			}
+		end
 	end
 end
 
