@@ -591,6 +591,7 @@ critter = actor.subclass{
 		pinned=79,
  },
 	critter=true,
+	afraid=true,
 }
 
 function critter:init(...)
@@ -609,7 +610,7 @@ end
 function critter:think()
 	local pb = protagonist:hitbox().b
 	local d = protagonist:middle().x - self:middle().x
-	if pb>=self.y and pb<=self:hitbox().b and abs(d) < 64 then
+	if self.afraid and pb>=self.y and pb<=self:hitbox().b and abs(d) < 64 then
 		self.vel.x=-sign(d)*self.run.m
 		self.nextthink=1
 	else
@@ -749,6 +750,7 @@ end
 majungasaurus = critter.subclass{
 	__name="rahonavis",
 	critter=false,
+	afraid=false,
  run={m=40},
 	sprites={
 		body=70,
