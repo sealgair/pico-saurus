@@ -1248,6 +1248,7 @@ function world:findspawns()
  local b=self:tilebox()
  self.spawns.critters={}
 	self.spawns.danger={}
+	self.spawns.apex={}
  self.spawns.fish={}
 
 	-- find the critters on the map
@@ -1257,7 +1258,8 @@ function world:findspawns()
    if fget(s,sflags.cs) then
 				if majungasaurus:spriteset()[s] then
 					if self.carrion[self:screenkey()] then
-						self:spawn(majungasaurus(x*self.pixels.w, y*self.pixels.h))
+						add(self.spawns.apex,
+						 {x=x*self.pixels.w, y=y*self.pixels.h, type=majungasaurus})
 					end
 				elseif rahonavis:spriteset()[s] then
 					add(self.spawns.danger,
@@ -1299,6 +1301,19 @@ function world:spawn_danger()
 	local c=rndchoice(self.spawns.danger)
 	if c then
 		self:spawn(c.type(c.x, c.y))
+	end
+	if #self.spawns.apex>0 then
+		local hasapex=false
+		for a in all(self.actors) do
+			c=rndchoice(self.spawns.apex)
+			if a.type==c.type then
+				hasapex=true
+				break
+			end
+		end
+		if not hasapex then
+			self:spawn(c.type(c.x, c.y))
+		end
 	end
 end
 
