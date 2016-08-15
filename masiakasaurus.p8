@@ -843,7 +843,7 @@ function player:init(...)
 		health=1,
 		food=.6,
 		water=.8,
-		sleep=0.7,
+		sleep=1,
 	}
 end
 
@@ -1727,8 +1727,8 @@ function drawsplash()
 	cprint("masiakasaurus knopfleri", 8)
 	cprint(" mark knopfler's", 9)
 	cprint(" vicious lizard", 9)
-	cprint(" z to eat", 6)
-	cprint(" x to run", 6)
+	cprint(" x to jump", 6)
+	cprint(" hold z to run or eat", 6)
 	cprint(" x or z to start", 7)
 end
 
