@@ -483,11 +483,13 @@ end
 
 -- a hook to perform actions when an actor gets hurt
 -- calls despawn if health runs out
-function actor:hurt(d)
+function actor:hurt(d, keep)
 	self.health-=d
 	if self.health<=0 then
 		self.health=0
-		world:despawn(self)
+		if not keep then
+			world:despawn(self)
+		end
 	end
 end
 
@@ -840,7 +842,7 @@ function player:init(...)
 	self.efc=8
 	self.food={}
 	self.stats={
-		health=1,
+		health=.1,
 		food=.6,
 		water=.8,
 		sleep=1,
@@ -1008,7 +1010,7 @@ end
 
 -- reset sleep counter if player gets hurt
 function player:hurt(d)
-	actor.hurt(self, d)
+	actor.hurt(self, d, true)
 	self.sleepcount=0
 	if self.sleeptime!=nil then
 		self.sleeptime+=d*10
@@ -1678,8 +1680,10 @@ function _update()
 end
 
 function _update60()
-	if gamestate==gs.gameover then return end
- if gamestate==gs.init then
+	if gamestate==gs.gameover then
+		gotime+=dt
+		return
+	elseif gamestate==gs.init then
   if btnp(4) or btnp(5) then
    gamestate=gs.play
 		 music(0)
@@ -1715,6 +1719,7 @@ function _update60()
 
 	if protagonist.stats.health<=0 then
 		gamestate=gs.gameover
+		gotime=0
 	elseif protagonist.sleeping then
 		gamestate=gs.sleep
 		world:startsleep()
@@ -1733,9 +1738,17 @@ function drawsplash()
 end
 
 function drawgameover()
-	rectfill(0,0, 127,127, 0)
-	cursor(16,16)
-	cprint("game over", 8)
+	local p=protagonist:middle()
+	local o=world:offset()
+	p.x-=o.x
+	p.y-=o.y
+	local d=(1-min(gotime/4, 1))*127
+
+ color(0)
+	rectfill(0,0,127,p.y-d)
+	rectfill(0,p.y+d,127,127)
+
+	print("game over", 16, 16, 8)
 end
 
 function drawsleep(time)
@@ -1785,10 +1798,6 @@ function _drawsleep(time)
 end
 
 function _draw()
-	if gamestate==gs.gameover then
-		drawgameover()
-		return
-	end
  world:draw({x=0, y=16})
  drawhud()
  if gamestate==gs.init then
@@ -1798,6 +1807,9 @@ function _draw()
 		drawsleep(min(sleeptime/2, .8))
 	elseif wakingtime > 0 then
 		drawsleep(wakingtime)
+	end
+	if gamestate==gs.gameover then
+		drawgameover()
 	end
  drawdebug()
 	drawstats()
