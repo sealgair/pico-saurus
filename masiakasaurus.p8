@@ -1742,7 +1742,11 @@ function drawsleep(time)
 	local c=5
 	if (isnight()) c=6
 	local p=protagonist:middle()
-	for i=0,2 do
+	local n=3
+	if wakingtime > 0 then
+		n=flr(n*2*wakingtime)
+	end
+	for i=0,n-1 do
 		x=p.x-6+i*4
 		local y=p.y-10+sin((sleeptime+dt*4*i))*3
 		world:print("z", x, y, 5)
