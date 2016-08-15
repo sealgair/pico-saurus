@@ -843,7 +843,7 @@ function player:init(...)
 		health=1,
 		food=.6,
 		water=.8,
-		sleep=1,
+		sleep=0.7,
 	}
 end
 
@@ -1742,7 +1742,11 @@ function drawsleep(time)
 	local c=5
 	if (isnight()) c=6
 	local p=protagonist:middle()
-	world:print("zzz", p.x-4, p.y-8, 5)
+	for i=0,2 do
+		x=p.x-6+i*4
+		local y=p.y-10+sin((sleeptime+dt*4*i))*3
+		world:print("z", x, y, 5)
+	end
 end
 
 function _drawsleep(time)
