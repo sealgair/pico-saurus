@@ -1761,10 +1761,18 @@ function drawgameover()
 	protagonist:draw(o)
 	if d<=0 then
 		d=(min(gotime/l-1, 1))*max(p.x, 127-p.x)
-		line(p.x-d, p.y+1, p.x+d, p.y+1, 8)
+		if d>8 then
+			clip(p.x-d, 0, d*2, 127)
+			line(0, p.y+1, 127, p.y+1, 8)
+			local tx=p.x+16
+			if p.x>64 then
+				p.x-=16
+			end
+			print("game over", 16, p.y-4, 8)
+		else
+			line(p.x-d, p.y+1, p.x+d, p.y+1, 8)
+		end
 	end
-
-	print("game over", 16, 16, 8)
 end
 
 function drawsleep(time)
