@@ -72,6 +72,11 @@ function find(t, item)
 	return nil
 end
 
+-- combine max and min
+function bound(v, t, b)
+	return max(min(v, t), b)
+end
+
 -- return a table containing numbers from s (def 1) to e
 function range(e, s, d)
 	local s=s or 1
@@ -853,8 +858,9 @@ function player:init(...)
 		health=1,
 		food=.8,
 		water=.9,
-		sleep=.15,
+		sleep=.2,
 	}
+	self.btndelay={}
 end
 
 function player:munch(d)
@@ -910,23 +916,39 @@ function player:mouth()
 	return c
 end
 
+-- delayed button detection
+function player:dbtn(b)
+	local d=bound(.33-self.stats.sleep, 0.33, 0)*1.5
+	local r=false
+	if self.btndelay[b]==nil then
+		self.btndelay[b]=0
+	end
+	if btn(b) then
+		r=self.btndelay[b]>=d
+		self.btndelay[b]+=dt
+	else
+		self.btndelay[b]=0
+	end
+	return r
+end
+
 function player:move()
 	if self.sleeping then return end
-	local sleepadj=max(min(self.stats.sleep*2, 1), 0.3)
+	local slpadj=bound(self.stats.sleep*2, 1, 0.3)
 
  if btn(self.btn.l) then
   self.flipped=true
  elseif btn(self.btn.r) then
   self.flipped=false
  end
- if btn(self.btn.j) and self.grounded then
+ if self:dbtn(self.btn.j) and self.grounded then
   self.j=min(self.j+self.jd,1)
  elseif self.j>0 then
-  self.vel.y-=self.jump*(1+self.j)*sleepadj
+  self.vel.y-=self.jump*(1+self.j)*slpadj
   self.j=0
  end
 
- local run=self.run.m*sleepadj
+ local run=self.run.m*slpadj
 	if btn(self.btn.s) then
 		run*=1.5
 	end
@@ -943,10 +965,10 @@ function player:move()
 			end
 		end
 		self.vel.x=0
-	elseif btn(self.btn.l) and self.j<=0 then
+	elseif self:dbtn(self.btn.l) and self.j<=0 then
   self.vel.x-=self.run.a*dt
   self.vel.x=max(self.vel.x,-run)
- elseif btn(self.btn.r) and self.j<=0 then
+ elseif self:dbtn(self.btn.r) and self.j<=0 then
   self.vel.x+=self.run.a*dt
   self.vel.x=min(self.vel.x,run)
  elseif self.vel.x!=0 then
@@ -964,7 +986,7 @@ function player:move()
  -- drink/eat
 	self.eating=false
 	self.drinking=false
-	if self.grounded and btn(self.btn.e) then
+	if self.grounded and self:dbtn(self.btn.e) then
 		local m=self:mouth()
 		if #self.food>0 then
 			self.eating=true
