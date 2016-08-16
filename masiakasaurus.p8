@@ -123,10 +123,11 @@ end
 
 function drawstats()
 	if showstats then
-		rectfill(0,120, 54,127, 5)
+		rectfill(0,120, 127,127, 5)
 		local m="#"..flr(stat(0))
 		m=m.."\t%"..flr(stat(1)*100)
 		m=m.."\ta:"..#world.actors
+		m=m.."\tvx:"..flr(protagonist.vel.x)
   print(m, 2,122, 10)
 	end
 end
@@ -849,10 +850,10 @@ function player:init(...)
 	self.efc=8
 	self.food={}
 	self.stats={
-		health=.1,
-		food=.6,
-		water=.8,
-		sleep=1,
+		health=1,
+		food=.8,
+		water=.9,
+		sleep=.55,
 	}
 end
 
@@ -924,7 +925,8 @@ function player:move()
   self.j=0
  end
 
- local run=self.run.m
+	local sleepadj=max(min(self.stats.sleep*2, 1), 0.1)
+ local run=self.run.m*sleepadj
 	if btn(self.btn.s) then
 		run*=1.5
 	end
@@ -1041,7 +1043,6 @@ function player:age(dt)
 
 	local hd=(1-min(self.stats.food*2, 1))*2
 	hd+=(1-min(self.stats.water*2, 1))*2
-	hd+=(1-min(self.stats.sleep*3, 1))*2
 	self.stats.health-=d*hd
 	for k,v in pairs(self.stats) do
 		self.stats[k]=min(max(v,0),1)
