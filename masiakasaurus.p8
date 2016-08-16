@@ -853,7 +853,7 @@ function player:init(...)
 		health=1,
 		food=.8,
 		water=.9,
-		sleep=.55,
+		sleep=.15,
 	}
 end
 
@@ -912,7 +912,7 @@ end
 
 function player:move()
 	if self.sleeping then return end
-	local sleepadj=max(min(self.stats.sleep*2, 1), 0.1)
+	local sleepadj=max(min(self.stats.sleep*2, 1), 0.3)
 
  if btn(self.btn.l) then
   self.flipped=true
@@ -1046,6 +1046,11 @@ function player:age(dt)
 	self.stats.health-=d*hd
 	for k,v in pairs(self.stats) do
 		self.stats[k]=min(max(v,0),1)
+	end
+
+	if self.stats.sleep<=0 then
+		self.sleepcount=nil
+		self.sleeping=true
 	end
 end
 
