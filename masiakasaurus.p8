@@ -971,7 +971,7 @@ function player:move()
 			self.eating=true
 			self.stats.food+=dt*.05
 			self.stats.water+=dt*.025
-		elseif self:onwater() then
+		elseif self:onwater() and abs(self.vel.x)<dt then
 			self.drinking=true
 			self:drink()
 		end
