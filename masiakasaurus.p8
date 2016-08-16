@@ -1740,6 +1740,9 @@ end
 function _update60()
 	if gamestate==gs.gameover then
 		gotime+=dt
+		if gotime>8 and (btnp(4) or btnp(5)) then
+			run()
+		end
 		return
 	elseif gamestate==gs.init then
   if btnp(4) or btnp(5) then
@@ -1827,12 +1830,14 @@ function drawgameover()
 	if gotime>l*2 then
 		local txt={
 			"days survived: "..protagonist.score.days,
-			"slept: "..protagonist.score.sleep,
-			"drank: "..protagonist.score.food*100,
-			"ate: "..protagonist.score.food*100,
+			"slept: "..flr(protagonist.score.sleep),
+			"drank: "..flr(protagonist.score.food*100),
+			"ate: "..flr(protagonist.score.food*100),
 			" - "..protagonist.score.mammals.." mammals",
 			" - "..protagonist.score.fish.." fish",
 			" - "..protagonist.score.rahonavii.." rahonavii",
+			"",
+			"x or z to restart",
 		}
 		local f=(gotime-l*2)*10
 		local i=0
