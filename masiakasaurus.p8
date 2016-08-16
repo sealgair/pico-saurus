@@ -1766,9 +1766,9 @@ function drawgameover()
 			line(0, p.y+1, 127, p.y+1, 8)
 			local tx=p.x+16
 			if p.x>64 then
-				p.x-=16
+				tx-=64
 			end
-			print("game over", 16, p.y-4, 8)
+			print("game over", tx, p.y-4, 8)
 		else
 			line(p.x-d, p.y+1, p.x+d, p.y+1, 8)
 		end
