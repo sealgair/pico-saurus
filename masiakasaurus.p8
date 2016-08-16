@@ -912,6 +912,7 @@ end
 
 function player:move()
 	if self.sleeping then return end
+	local sleepadj=max(min(self.stats.sleep*2, 1), 0.1)
 
  if btn(self.btn.l) then
   self.flipped=true
@@ -921,11 +922,10 @@ function player:move()
  if btn(self.btn.j) and self.grounded then
   self.j=min(self.j+self.jd,1)
  elseif self.j>0 then
-  self.vel.y-=self.jump*(1+self.j)
+  self.vel.y-=self.jump*(1+self.j)*sleepadj
   self.j=0
  end
 
-	local sleepadj=max(min(self.stats.sleep*2, 1), 0.1)
  local run=self.run.m*sleepadj
 	if btn(self.btn.s) then
 		run*=1.5
