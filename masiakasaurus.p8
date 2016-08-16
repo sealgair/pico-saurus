@@ -842,6 +842,15 @@ player = actor.subclass{
 		eat={68, 84, fc={16,8}},
 		drink=100,
  },
+	score={
+		food=0,
+		water=0,
+		sleep=0,
+		mammals=0,
+		rahonavii=0,
+		fish=0,
+		days=0,
+	}
 }
 
 function player:init(...)
@@ -855,10 +864,10 @@ function player:init(...)
 	self.efc=8
 	self.food={}
 	self.stats={
-		health=1,
+		health=.1,
 		food=.8,
 		water=.9,
-		sleep=.2,
+		sleep=1,
 	}
 	self.btndelay={}
 end
@@ -1078,6 +1087,7 @@ end
 
 function player:drink()
 	self.stats.water+=dt/20
+	self.score.water+=dt/20
 end
 
 function player:eat()
@@ -1085,11 +1095,20 @@ function player:eat()
 	local a=f:munch(8*dt)/100
 	self.stats.food+=a
 	self.stats.water+=a/2
+	self.score.food+=a
+	self.score.water+=a/2
 	f:setmiddle(self:mouth())
 	f.y=self.y
 	f.flipped=self.flipped
 	if f.health<=0 then
 		del(self.food, f)
+		if f.type==critter then
+			self.score.mammals+=1
+		elseif f.type==fish then
+			self.score.fish+=1
+		elseif f.type==rahonavis then
+			self.score.rahonavii+=1
+		end
 	end
 end
 
@@ -1109,6 +1128,7 @@ function player:snooze(dt)
 	else
 		self.sleeptime+=dt
 	end
+	self.score.sleep+=dt
 
 	local d=(1/day)*dt
 	self.stats.water-=d/6
@@ -1448,6 +1468,7 @@ function world:morning()
 	end
 	-- reset whether any tile has carrion
 	self.carrion={}
+	protagonist.score.days+=1
 end
 
 -- player has gone to sleep
@@ -1797,8 +1818,34 @@ function drawgameover()
 				tx-=64
 			end
 			print("game over", tx, p.y-4, 8)
+			clip()
 		else
 			line(p.x-d, p.y+1, p.x+d, p.y+1, 8)
+		end
+	end
+
+	if gotime>l*2 then
+		local txt={
+			"days survived: "..protagonist.score.days,
+			"slept: "..protagonist.score.sleep,
+			"drank: "..protagonist.score.food*100,
+			"ate: "..protagonist.score.food*100,
+			" - "..protagonist.score.mammals.." mammals",
+			" - "..protagonist.score.fish.." fish",
+			" - "..protagonist.score.rahonavii.." rahonavii",
+		}
+		local f=(gotime-l*2)*10
+		local i=0
+		cursor(8,8)
+		color(4)
+		for row in all(txt) do
+			if i+#row<f then
+				print(row)
+				i+=#row
+			else
+   	print(sub(row, 0, f-(i+#row)))
+				break
+			end
 		end
 	end
 end
