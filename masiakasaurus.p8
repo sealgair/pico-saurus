@@ -102,30 +102,6 @@ function mlayer(...)
  return l
 end
 
--- draw debug messages to the screen
-debuglog={}
-function debug(...)
-	local msg=""
-	for m in all({...}) do
-		msg=msg.." "..m
-	end
- add(debuglog, msg)
- while #debuglog > 8 do
-  del(debuglog, debuglog[1])
- end
-end
-function drawdebug()
-	if isnight() then
- 	color(8)
-	else
-		color(0)
-	end
- cursor(4,20)
- for msg in all(debuglog) do
-  print(msg)
- end
-end
-
 function drawstats()
 	if showstats then
 		rectfill(0,120, 127,127, 5)
@@ -207,12 +183,6 @@ end
 -- returns 1 if x is positive, -1 if x is negative
 function sign(x)
  return x/abs(x)
-end
-
--- get sprite flags at map coord
-function mfget(x,y,f)
- local s=mget(flr(x/8),flr(y/8))
- return fget(s,f)
 end
 
 --------------------------------
@@ -380,15 +350,6 @@ function actor:middle()
  }
 end
 
-function actor:setmiddle(args)
-	if args.x then
-		self.x=args.x-self.w*8/2
-	end
-	if args.y then
-		self.y=args.y-self.h*8/2
-	end
-end
-
 function actor:touch(block)
 end
 
@@ -457,10 +418,6 @@ function actor:overlaps(a)
 	return self:hitbox():overlaps(a:hitbox())
 end
 
-function actor:cansee(other)
- return not world:linecollides(self:middle(), other:middle())
-end
-
 function actor:sprite()
  if self.sprites.jump then
 	 if self.vel.y>0 then
@@ -478,15 +435,9 @@ function actor:sprite()
 end
 
 function actor:draw(o)
-	local x=self.x
-	local y=self.y
-	if o!= nil then
-		x-=o.x
-		y-=o.y
-	end
  spr(
   self:sprite(),
-  x, y,
+  self.x, self.y,
   self.w, self.h,
   self.flipped,
 		self.upsidedown
@@ -708,11 +659,8 @@ function rahonavis:think()
 		self.rethink=nil
 	end
 
-	if self.walled then
-		-- self.direction*=-1
-		if self.grounded then
-			self.vel.y-=self.jump
-		end
+	if self.walled and self.grounded then
+		self.vel.y-=self.jump
 	end
 	if self.eating then
 		self.vel.x=0
@@ -781,10 +729,11 @@ function majungasaurus:move()
 		local mm=self:middle()
 		local pm=protagonist:middle()
 		local dx=mm.x-pm.x
-		protagonist.vel.x=-sign(dx)*200
-		protagonist.vel.y-=80
+		protagonist.vel.x=-sign(dx)*50
 
 		if protagonist.y>self.y+8 and self.flipped==(dx>0) then
+			protagonist.vel.x=-sign(dx)*200
+			protagonist.vel.y-=80
 			protagonist:munch(3)
 			world:particles{
 				x=(mm.x+pm.x)/2,
@@ -842,15 +791,6 @@ player = actor.subclass{
 		eat={68, 84, fc={16,8}},
 		drink=100,
  },
-	score={
-		food=0,
-		water=0,
-		sleep=0,
-		mammals=0,
-		rahonavii=0,
-		fish=0,
-		days=0,
-	}
 }
 
 function player:init(...)
@@ -870,6 +810,15 @@ function player:init(...)
 		sleep=1,
 	}
 	self.btndelay={}
+	self.score={
+		food=0,
+		water=0,
+		sleep=0,
+		mammals=0,
+		rahonavii=0,
+		fish=0,
+		days=0,
+	}
 end
 
 function player:munch(d)
@@ -1097,7 +1046,7 @@ function player:eat()
 	self.stats.water+=a/2
 	self.score.food+=a
 	self.score.water+=a/2
-	f:setmiddle(self:mouth())
+	f.x=self:mouth().x-f.w*4
 	f.y=self.y
 	f.flipped=self.flipped
 	if f.health<=0 then
@@ -1245,8 +1194,6 @@ end
 function world:spawn(actor)
 	if find(self.actors, actor)==nil then
  	add(self.actors, actor)
-	else
-		debug('double spawn '..actor.__name)
 	end
 end
 
@@ -1501,29 +1448,6 @@ function world:collides(x,y,w,h, flag)
   end
  end
  return false
-end
-
-function world:linecollides(p1, p2, flag)
-	flag = flag or sflags.sm
-	local dx=(p1.x-p2.x)/8
-	local dy=(p1.y-p2.y)/8
-	local s=dy/dx
-	local a=0 z=0 i=0 lmget=false
-	if dx>dy then
-		a=flr(p1.x) z=flr(p2.x) i=sign(dx)
-		lmget=function(x) return mget(x, flr(x*s)) end
-	else
-	 a=flr(p1.y) z=flr(p2.y) i=sign(dy)
-		lmget=function(y) return mget(flr(y/s), y) end
-	end
-
-	for c=a,z,i do
-		local spr=lmget(c)
-		if fget(spr,flag) then
-			return spr
-		end
-	end
-	return false
 end
 
 -- check whether point is outside bounds
@@ -1810,7 +1734,9 @@ function drawgameover()
 	rectfill(0,0,127,p.y-d)
 	rectfill(0,p.y+d,127,127)
 
-	protagonist:draw(o)
+	camera(o.x, o.y)
+	protagonist:draw()
+	camera()
 	if d<=0 then
 		d=(min(gotime/l-1, 1))*max(p.x, 127-p.x)
 		if d>8 then
@@ -1870,37 +1796,6 @@ function drawsleep(time)
 	end
 end
 
-function _drawsleep(time)
-	local o=world:offset()
-	local pb=protagonist:hitbox()
-	pb=box(
-		pb.x-pb.w-o.x,
-		pb.y-pb.h-o.y,
-		pb.w*3, pb.h*3
-	)
-	local pm={
-		x=pb.x+pb.w/2,
-		y=pb.y+pb.h/2,
-	}
-	local c={5,6}
-	for x=0,127 do
-		for y=16,127 do
-			local r=rnd()
-			if pb:contains({x=x,y=y}) then
-				local dx=(x-pm.x)/(pb.w/2)
-				local dy=(y-pm.y)/(pb.h/2)
-				if dx*dx+dy*dy < 1 then
-					r=time
-				end
-			end
-			if r<time then
-				r=r*1/time
-				pset(x,y,c[flr(r*#c)+1])
-			end
-		end
-	end
-end
-
 function _draw()
  world:draw({x=0, y=16})
  drawhud()
@@ -1915,7 +1810,6 @@ function _draw()
 	if gamestate==gs.gameover then
 		drawgameover()
 	end
- drawdebug()
 	drawstats()
 end
 __gfx__
