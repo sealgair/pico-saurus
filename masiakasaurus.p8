@@ -729,19 +729,25 @@ function majungasaurus:move()
 		local mm=self:middle()
 		local pm=protagonist:middle()
 		local dx=mm.x-pm.x
-		protagonist.vel.x=-sign(dx)*50
 
-		if protagonist.y>self.y+8 and self.flipped==(dx>0) then
-			protagonist.vel.x=-sign(dx)*200
-			protagonist.vel.y-=80
-			protagonist:munch(3)
-			world:particles{
-				x=(mm.x+pm.x)/2,
-				y=(mm.y+pm.y)/2,
-				color=8,
-				duration=0.2,
-				rate=500,
-			}
+		if protagonist.y>self.y+8 then
+			if self.flipped==(dx>0) then
+				protagonist.vel.x=-sign(dx)*200
+				protagonist.vel.y-=80
+				protagonist:munch(3)
+				world:particles{
+					x=(mm.x+pm.x)/2,
+					y=(mm.y+pm.y)/2,
+					color=8,
+					duration=0.2,
+					rate=500,
+				}
+			else
+				protagonist.vel.x=-sign(dx)*50
+			end
+		else
+				protagonist.vel.y=-80
+				protagonist.vel.x=-dx*10
 		end
 	end
 end
@@ -804,7 +810,7 @@ function player:init(...)
 	self.efc=8
 	self.food={}
 	self.stats={
-		health=.1,
+		health=1,
 		food=.8,
 		water=.9,
 		sleep=1,
@@ -2107,4 +2113,3 @@ __music__
 00 41424344
 00 41424344
 00 41424344
-
