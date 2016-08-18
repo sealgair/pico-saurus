@@ -6,11 +6,11 @@ showstats=false
 
 -- game states:
 gs={
-	gameover=-1,
-	init=0,
-	play=1,
-	slide=2,
-	sleep=3,
+ gameover=-1,
+ init=0,
+ play=1,
+ slide=2,
+ sleep=3,
 }
 
 gamestate=gs.init
@@ -20,8 +20,8 @@ sflags={
  sm=0, -- solid map
  mf=1, -- map foreground
  mb=2, -- map background
-	cn=3, -- carrion
-	wm=4, -- water map tile
+ cn=3, -- carrion
+ wm=4, -- water map tile
  fs=6, -- edible fish spawn
  cs=7, -- edible critter spawn
 }
@@ -37,60 +37,60 @@ maxnum=32767.99
 
 -- class maker
 function class(proto, base)
-	proto = proto or {}
-	proto.__index = proto
-	setmetatable(proto, {
-		__index = base,
-		__call = function(cls, ...)
-			local self = setmetatable({
-				type=proto
-			}, proto)
-			if(self.init) self:init(...)
-			return self
-		end
-	})
-	proto.subclass = function(subproto)
-		return class(subproto, proto)
-	end
-	return proto
+ proto = proto or {}
+ proto.__index = proto
+ setmetatable(proto, {
+  __index = base,
+  __call = function(cls, ...)
+   local self = setmetatable({
+    type=proto
+   }, proto)
+   if(self.init) self:init(...)
+   return self
+  end
+ })
+ proto.subclass = function(subproto)
+  return class(subproto, proto)
+ end
+ return proto
 end
 
 -- iterate over table in reverse order
 function reverse(t)
-	local n=#t+1
-	return function()
-		n-=1
-		if n>0 then return t[n] end
-	end
+ local n=#t+1
+ return function()
+  n-=1
+  if n>0 then return t[n] end
+ end
 end
 
 -- find key of table item (nil if not found)
 function find(t, item)
-	for k,v in pairs(t) do
-		if (v==item) return k
-	end
-	return nil
+ for k,v in pairs(t) do
+  if (v==item) return k
+ end
+ return nil
 end
 
 -- combine max and min
 function bound(v, t, b)
-	return max(min(v, t), b)
+ return max(min(v, t), b)
 end
 
 -- return a table containing numbers from s (def 1) to e
 function range(e, s, d)
-	local s=s or 1
-	local d=d or 1
-	local r={}
-	for i=s,e,d do
-		add(r,i)
-	end
-	return r
+ local s=s or 1
+ local d=d or 1
+ local r={}
+ for i=s,e,d do
+  add(r,i)
+ end
+ return r
 end
 
 -- randomly choose item from table
 function rndchoice(t)
-	return t[flr(rnd(#t))+1]
+ return t[flr(rnd(#t))+1]
 end
 
 -- convert sprite flags to a map layer
@@ -103,14 +103,14 @@ function mlayer(...)
 end
 
 function drawstats()
-	if showstats then
-		rectfill(0,120, 127,127, 5)
-		local m="#"..flr(stat(0))
-		m=m.."\t%"..flr(stat(1)*100)
-		m=m.."\ta:"..#world.actors
-		m=m.."\tvx:"..flr(protagonist.vel.x)
+ if showstats then
+  rectfill(0,120, 127,127, 5)
+  local m="#"..flr(stat(0))
+  m=m.."\t%"..flr(stat(1)*100)
+  m=m.."\ta:"..#world.actors
+  m=m.."\tvx:"..flr(protagonist.vel.x)
   print(m, 2,122, 10)
-	end
+ end
 end
 
 -- useful for iterating between x/y & w/h
@@ -118,43 +118,43 @@ xywh={x='w', y='h'}
 
 -- is color a darker than color b?
 darkorder={
-	0,1,2,5,4,3,8,13,9,14,6,11,15,12,10,7
+ 0,1,2,5,4,3,8,13,9,14,6,11,15,12,10,7
 }
 darkindex={}
 for k,v in pairs(darkorder) do
-	darkindex[v]=k
+ darkindex[v]=k
 end
 function darker(a, b)
-	return darkindex[a]<darkindex[b]
+ return darkindex[a]<darkindex[b]
 end
 
 -- color mappings for nighttime
 nightmap={
-	[1]=0,
-	[2]=1,
-	[3]=1,
-	[4]=5,
-	[5]=0,
-	[6]=5,
-	[7]=6,
-	[8]=4,
-	[9]=4,
-	[10]=9,
-	[11]=3,
-	[12]=13,
-	[13]=2,
-	[14]=8,
-	[15]=4,
+ [1]=0,
+ [2]=1,
+ [3]=1,
+ [4]=5,
+ [5]=0,
+ [6]=5,
+ [7]=6,
+ [8]=4,
+ [9]=4,
+ [10]=9,
+ [11]=3,
+ [12]=13,
+ [13]=2,
+ [14]=8,
+ [15]=4,
 }
 function isnight()
-	return daytime>day-twilight/2 and daytime<day*2-twilight/2
+ return daytime>day-twilight/2 and daytime<day*2-twilight/2
 end
 function mapnight()
-	if isnight() then
-		for f,t in pairs(nightmap) do
-			pal(f, t)
-		end
-	end
+ if isnight() then
+  for f,t in pairs(nightmap) do
+   pal(f, t)
+  end
+ end
 end
 
 -- print with color
@@ -190,20 +190,20 @@ end
 --[[ memory format:
 0x3100 - song
  each song is 4 bytes
-	the first bit of each byte is
-	a flag:
-	 byte 1: loop start
-		byte 2: loop back
-		byte 3: stop
-	the remainder of the byte is
-	the index of each of the 4 sfx
-	making up the channels of the
-	song
+ the first bit of each byte is
+ a flag:
+  byte 1: loop start
+  byte 2: loop back
+  byte 3: stop
+ the remainder of the byte is
+ the index of each of the 4 sfx
+ making up the channels of the
+ song
 
 0x3200 - sfx
  each sfx is comprised of 64 two
  byte notes, followed by two
-	bytes of metadata
+ bytes of metadata
 
 note format: 2 bytes, backwards
 byte 2:
@@ -211,108 +211,108 @@ byte 2:
 byte 1:
  IIPPPPPP
 
-	EEE: effect (0-7)
-	VVV: volume (0-7)
-	III: instrument (0-7, split over bytes)
-	PPPPPP: pitch (0-63)
+ EEE: effect (0-7)
+ VVV: volume (0-7)
+ III: instrument (0-7, split over bytes)
+ PPPPPP: pitch (0-63)
 
 sfx metadata:
  byte 1 is probably loop start & end
-	byte 2 is probably volume
+ byte 2 is probably volume
 ]]
 --------------------------------
 
 notenames={
-	c=0,
-	cs=1,
-	d=2,
-	ds=3,
-	e=4,
-	f=5,
-	fs=6,
-	g=7,
-	gs=8,
-	a=9,
-	as=10,
-	b=11,
+ c=0,
+ cs=1,
+ d=2,
+ ds=3,
+ e=4,
+ f=5,
+ fs=6,
+ g=7,
+ gs=8,
+ a=9,
+ as=10,
+ b=11,
 }
 
 function altmusic(m, notealt)
-	local l=4
+ local l=4
  local b=0x3100+m*l
-	local res=band(peek(b),128)
-	local rep=band(peek(b+1),128)
-	local stp=band(peek(b+2),128)
-	for i=0,l-1 do
-		local s=band(peek(b+i),127)
-		if s!=0x42 then
-			altsfx(s, notealt)
-		end
-	end
-	if rep+stp==0 then
+ local res=band(peek(b),128)
+ local rep=band(peek(b+1),128)
+ local stp=band(peek(b+2),128)
+ for i=0,l-1 do
+  local s=band(peek(b+i),127)
+  if s!=0x42 then
+   altsfx(s, notealt)
+  end
+ end
+ if rep+stp==0 then
   altmusic(m+1, notealt)
-	end
+ end
 end
 
 function altsfx(s, notealt)
-	local l=68
-	local b=0x3200+s*l
-	local notes={}
-	for i=0,l-3,2 do
-		local b1=peek(b+i+1)
-		local b2=peek(b+i)
-		local note={
-			pitch=band(b2, 63),
-			instrument=shl(band(b1, 1), 2)+shr(band(b2, 192), 6),
-			volume=shr(band(b1, 14), 1),
-			effect=shr(band(b1, 112), 4),
-		}
-		local nc=notealt(note) or {}
-		if nc.pitch then
-			poke(b+i, bor(band(192, b2), nc.pitch))
-		end
-	end
-	return notes
+ local l=68
+ local b=0x3200+s*l
+ local notes={}
+ for i=0,l-3,2 do
+  local b1=peek(b+i+1)
+  local b2=peek(b+i)
+  local note={
+   pitch=band(b2, 63),
+   instrument=shl(band(b1, 1), 2)+shr(band(b2, 192), 6),
+   volume=shr(band(b1, 14), 1),
+   effect=shr(band(b1, 112), 4),
+  }
+  local nc=notealt(note) or {}
+  if nc.pitch then
+   poke(b+i, bor(band(192, b2), nc.pitch))
+  end
+ end
+ return notes
 end
 
 function minorize(m, base)
-	base=base%12
-	local minors={
+ base=base%12
+ local minors={
   [(base+4)%12]=true,
   [(base+9)%12]=true,
   [(base+11)%12]=true,
-	}
-	altmusic(m, function(note)
-		local pc=note.pitch%12
-		if minors[pc] then
-			return {
-				pitch=note.pitch-1
-			}
-		end
-	end)
+ }
+ altmusic(m, function(note)
+  local pc=note.pitch%12
+  if minors[pc] then
+   return {
+    pitch=note.pitch-1
+   }
+  end
+ end)
 end
 
 function reloadmusic(m)
-	local l=4
+ local l=4
  local b=0x3100+m*l
-	local res=band(peek(b),128)
-	local rep=band(peek(b+1),128)
-	local stp=band(peek(b+2),128)
-	for i=0,l-1 do
-		local s=band(peek(b+i),127)
-		if s!=0x42 then
-			reloadsfx(s)
-		end
-	end
-	if rep+stp==0 then
+ local res=band(peek(b),128)
+ local rep=band(peek(b+1),128)
+ local stp=band(peek(b+2),128)
+ for i=0,l-1 do
+  local s=band(peek(b+i),127)
+  if s!=0x42 then
+   reloadsfx(s)
+  end
+ end
+ if rep+stp==0 then
   reloadmusic(m+1)
-	end
+ end
 end
 
 function reloadsfx(s)
-		local l=68
-		local b=0x3200+s*l
-		reload(b, l)
+ local l=68
+ local b=0x3200+s*l
+ reload(b, l)
 end
 
 --------------------------------
@@ -321,43 +321,43 @@ end
 box = class()
 
 function box:init(l,t,w,h)
-	self.x=l
-	self.l=l
-	self.w=w
-	self.r=l+w
-	self.y=t
-	self.t=t
-	self.h=h
-	self.b=t+h
+ self.x=l
+ self.l=l
+ self.w=w
+ self.r=l+w
+ self.y=t
+ self.t=t
+ self.h=h
+ self.b=t+h
 end
 
 function box:middle()
-	return {
-		x=self.x+self.w/2,
-		y=self.y+self.h/2,
-	}
+ return {
+  x=self.x+self.w/2,
+  y=self.y+self.h/2,
+ }
 end
 
 -- box contains point
 function box:contains(p)
-	return (
-	 p.x>self.l and
-		p.x<self.r and
-		p.y>self.t and
-		p.y<self.b
-	)
+ return (
+  p.x>self.l and
+  p.x<self.r and
+  p.y>self.t and
+  p.y<self.b
+ )
 end
 
 function box:overlaps(other)
-	-- don't count touching edges
-	-- as overlapping; the right
-	-- and bottom are exclusive
-	return (
-		self.l < other.r and
-		self.r > other.l and
-		self.t < other.b and
-		self.b > other.t
-	)
+ -- don't count touching edges
+ -- as overlapping; the right
+ -- and bottom are exclusive
+ return (
+  self.l < other.r and
+  self.r > other.l and
+  self.t < other.b and
+  self.b > other.t
+ )
 end
 
 --------------------------------
@@ -367,70 +367,70 @@ end
 partgen = class()
 
 function partgen:init(args)
-	-- required args
+ -- required args
  self.x=args.x
-	self.y=args.y
+ self.y=args.y
 
-	-- optional args
-	self.colors=args.colors or {args.color} or {7}
-	self.dur=args.duration or maxnum
-	self.rate=args.rate or 10
-	self.pdur=args.partduration or .2
-	self.actor=args.actor
+ -- optional args
+ self.colors=args.colors or {args.color} or {7}
+ self.dur=args.duration or maxnum
+ self.rate=args.rate or 10
+ self.pdur=args.partduration or .2
+ self.actor=args.actor
 
-	self.particles={}
-	self.age=0
-	self.pcount=0
+ self.particles={}
+ self.age=0
+ self.pcount=0
 end
 
 -- have i finished drawing
 function partgen:done()
-	return self.age>self.dur and #self.particles<=0
+ return self.age>self.dur and #self.particles<=0
 end
 
 function partgen:stop()
-	self.dur=0
+ self.dur=0
 end
 
 function partgen:newpart()
-	local p={
-		x=self.x, y=self.y,
-		c=rndchoice(self.colors),
-		vel={x=rnd(200)-100, y=-rnd(100)},
-		age=0,
-	}
-	if self.actor then
-		p.x+=self.actor.x
-		p.y+=self.actor.y
-	end
-	return p
+ local p={
+  x=self.x, y=self.y,
+  c=rndchoice(self.colors),
+  vel={x=rnd(200)-100, y=-rnd(100)},
+  age=0,
+ }
+ if self.actor then
+  p.x+=self.actor.x
+  p.y+=self.actor.y
+ end
+ return p
 end
 
 function partgen:update()
-	if self.age<=self.dur then
-	 self.age+=dt
-		while self.pcount < self.rate*self.age do
-			add(self.particles, self:newpart())
-			self.pcount+=1
-		end
-	end
+ if self.age<=self.dur then
+  self.age+=dt
+  while self.pcount < self.rate*self.age do
+   add(self.particles, self:newpart())
+   self.pcount+=1
+  end
+ end
 
-	for p in all(self.particles) do
-		p.age+=dt
-		if p.age>=self.pdur then
-			del(self.particles, p)
-		else
-			p.x+=p.vel.x*dt
-			p.y+=p.vel.y*dt
-			p.vel.y+=g*dt
-		end
-	end
+ for p in all(self.particles) do
+  p.age+=dt
+  if p.age>=self.pdur then
+   del(self.particles, p)
+  else
+   p.x+=p.vel.x*dt
+   p.y+=p.vel.y*dt
+   p.vel.y+=g*dt
+  end
+ end
 end
 
 function partgen:draw(o)
-	for p in all(self.particles) do
-		pset(p.x, p.y, p.c)
-	end
+ for p in all(self.particles) do
+  pset(p.x, p.y, p.c)
+ end
 end
 
 --------------------------------
@@ -438,9 +438,9 @@ end
 --------------------------------
 actor = class{
  __name="actor",
-	w=1, h=1,
-	danger=false,
-	critter=false,
+ w=1, h=1,
+ danger=false,
+ critter=false,
 }
 
 function actor:init(x,y)
@@ -449,28 +449,28 @@ function actor:init(x,y)
  self.vel={x=0,y=0}
  self.acc={x=0,y=0}
  self.flipped=false
-	self.upsidedown=false
+ self.upsidedown=false
  self.grounded=false
-	self.walled=false
+ self.walled=false
  self.wfp=0 --current pixel of walking animation
  self.wfd=8 --number of pixels per frame of walking animation
-	self.health=4
+ self.health=4
  self.pinned=false
 end
 
 function actor:spriteset(sprites)
-	sprites=sprites or self.sprites
-	local set={}
-	for _,s in pairs(sprites) do
-		if type(s)=="table" then
-			for _,ss in pairs(s) do
-				set[ss]=true
-			end
-		else
-			set[s]=true
-		end
-	end
-	return set
+ sprites=sprites or self.sprites
+ local set={}
+ for _,s in pairs(sprites) do
+  if type(s)=="table" then
+   for _,ss in pairs(s) do
+    set[ss]=true
+   end
+  else
+   set[s]=true
+  end
+ end
+ return set
 end
 
 function actor:middle()
@@ -508,14 +508,14 @@ function actor:move()
  --check for map collisions (x)
  local dx=-1
  if (self.vel.x>0) dx=hb.w-1
-	self.walled=false
+ self.walled=false
  for x=hb.x,newx,sign(self.vel.x) do
-		local c=world:collides(x+dx, hb.y, 1, hb.h-1)
+  local c=world:collides(x+dx, hb.y, 1, hb.h-1)
   if c then
    newx=x
    self.vel.x=0
-			self.walled=true
-			self:touch(c)
+   self.walled=true
+   self:touch(c)
    break
   end
  end
@@ -526,12 +526,12 @@ function actor:move()
  if (self.vel.y>0) dy=hb.h-1
  self.grounded=false
  for y=self.y,newy,sign(self.vel.y) do
-		local c=world:collides(hb.x, y+dy, hb.w-1, 1)
+  local c=world:collides(hb.x, y+dy, hb.w-1, 1)
   if c then
    self.grounded=true
    newy=y
    self.vel.y=0
-			self:touch(c)
+   self:touch(c)
    break
   end
  end
@@ -539,25 +539,25 @@ function actor:move()
 end
 
 function actor:hitbox()
-	return box(self.x, self.y,
-	 self.w*8, self.h*8
-	)
+ return box(self.x, self.y,
+  self.w*8, self.h*8
+ )
 end
 
 function actor:overlaps(a)
-	return self:hitbox():overlaps(a:hitbox())
+ return self:hitbox():overlaps(a:hitbox())
 end
 
 function actor:sprite()
  if self.sprites.jump then
-	 if self.vel.y>0 then
-	  return self.sprites.jump.d
-	 elseif self.vel.y<0 then
-	  return self.sprites.jump.u
-	 end
-	end
+  if self.vel.y>0 then
+   return self.sprites.jump.d
+  elseif self.vel.y<0 then
+   return self.sprites.jump.u
+  end
+ end
 
-	if self.vel.x!=0 then
+ if self.vel.x!=0 then
   local wf=flr(self.wfp/self.wfd)+1
   return self.sprites.walk[wf]
  end
@@ -570,28 +570,28 @@ function actor:draw(o)
   self.x, self.y,
   self.w, self.h,
   self.flipped,
-		self.upsidedown
+  self.upsidedown
  )
 end
 
 -- a hook to perform actions when an actor gets hurt
 -- calls despawn if health runs out
 function actor:hurt(d, keep)
-	self.health-=d
-	if self.health<=0 then
-		self.health=0
-		if not keep then
-			world:despawn(self)
-		end
-	end
+ self.health-=d
+ if self.health<=0 then
+  self.health=0
+  if not keep then
+   world:despawn(self)
+  end
+ end
 end
 
 -- hurt for (at most) d damage, return actual amount hurt
 -- (so that munching actor can gain health)
 function actor:munch(d)
  local r = min(d, self.health, 0)
-	self:hurt(d)
-	return r
+ self:hurt(d)
+ return r
 end
 
 
@@ -599,79 +599,79 @@ end
 -- fish class
 
 fish = actor.subclass{
-	__name="fish",
-	jump=200,
-	sprites={
-		jump={94, 95},
-		flop={110, 111},
-		pinned=110,
-	},
-	animd=.1,
-	critter=true,
+ __name="fish",
+ jump=200,
+ sprites={
+  jump={94, 95},
+  flop={110, 111},
+  pinned=110,
+ },
+ animd=.1,
+ critter=true,
 }
 
 function fish:init(...)
-	actor.init(self, ...)
-	self.y+=4
-	self.anim=0
-	self.vel.y=-self.jump
-	self:splash()
-	world:particles{
-		x=4,y=4, actor=self,
-		colors={7,12,1,13},
-		rate=10,
-	}
+ actor.init(self, ...)
+ self.y+=4
+ self.anim=0
+ self.vel.y=-self.jump
+ self:splash()
+ world:particles{
+  x=4,y=4, actor=self,
+  colors={7,12,1,13},
+  rate=10,
+ }
 end
 
 function fish:hitbox()
-	local b = actor.hitbox(self)
-	return box(b.x, b.y, b.w, b.h-4)
+ local b = actor.hitbox(self)
+ return box(b.x, b.y, b.w, b.h-4)
 end
 
 function fish:splash()
-	world:particles{
-		x=self.x+4, y=self.y+4,
-		colors={7,12,1,13},
-		duration=0.1,
-		rate=20,
-	}
+ world:particles{
+  x=self.x+4, y=self.y+4,
+  colors={7,12,1,13},
+  duration=0.1,
+  rate=20,
+ }
 end
 
 function fish:touch(s)
-	if fget(s, sflags.wm) then
-		world:despawn(self)
-		self:splash()
-	elseif fget(s, sflags.sm) then
-		self.vel.x=0
-	end
+ if fget(s, sflags.wm) then
+  world:despawn(self)
+  self:splash()
+ elseif fget(s, sflags.sm) then
+  self.vel.x=0
+ end
 end
 
 function fish:move()
-	actor.move(self)
-	if (not self.grounded
-	  and not protagonist.grounded
-			and actor.hitbox(self):overlaps(protagonist:hitbox())) then
-		self.vel.x+=protagonist.vel.x*.75
-		self.vel.y+=abs(protagonist.vel.x)*.5
-	end
+ actor.move(self)
+ if (not self.grounded
+   and not protagonist.grounded
+   and actor.hitbox(self):overlaps(protagonist:hitbox())) then
+  self.vel.x+=protagonist.vel.x*.75
+  self.vel.y+=abs(protagonist.vel.x)*.5
+ end
  self.anim+=dt
-	if (self.anim>2*self.animd) self.anim=0
-	self.upsidedown=self.vel.y>=0
+ if (self.anim>2*self.animd) self.anim=0
+ self.upsidedown=self.vel.y>=0
 end
 
 function fish:sprite()
-	if self.pinned then
-		return self.sprites.pinned
-	end
-	local s=self.sprites.jump
-	if self.grounded then
-		s=self.sprites.flop
-	end
-	if self.anim<self.animd then
-		return s[1]
-	else
-		return s[2]
-	end
+ if self.pinned then
+  return self.sprites.pinned
+ end
+ local s=self.sprites.jump
+ if self.grounded then
+  s=self.sprites.flop
+ end
+ if self.anim<self.animd then
+  return s[1]
+ else
+  return s[2]
+ end
 end
 
 --------------------------------
@@ -683,216 +683,216 @@ critter = actor.subclass{
  sprites={
   stand=78,
   walk={78},
-		pinned=79,
+  pinned=79,
  },
-	critter=true,
-	afraid=true,
+ critter=true,
+ afraid=true,
 }
 
 function critter:init(...)
-	actor.init(self, ...)
+ actor.init(self, ...)
  self.nextthink=0
-	self.flipped=rnd(1)>.5
+ self.flipped=rnd(1)>.5
 end
 
 function critter:sprite()
  if self.pinned then
-		return self.sprites.pinned
-	end
+  return self.sprites.pinned
+ end
  return actor.sprite(self)
 end
 
 function critter:think()
-	local pb = protagonist:hitbox().b
-	local d = protagonist:middle().x - self:middle().x
-	if self.afraid and pb>=self.y and pb<=self:hitbox().b and abs(d) < 64 then
-		self.vel.x=-sign(d)*self.run.m
-		self.nextthink=1
-	else
-		self.nextthink-=dt
-		if self.nextthink<=0 then
-			self.vel.x=self.run.m*(flr(rnd(3))-1)
-				-- seconds until next movement direction needs choosing
-			self.nextthink=rnd(1.5)+.5
-		end
-	end
+ local pb = protagonist:hitbox().b
+ local d = protagonist:middle().x - self:middle().x
+ if self.afraid and pb>=self.y and pb<=self:hitbox().b and abs(d) < 64 then
+  self.vel.x=-sign(d)*self.run.m
+  self.nextthink=1
+ else
+  self.nextthink-=dt
+  if self.nextthink<=0 then
+   self.vel.x=self.run.m*(flr(rnd(3))-1)
+    -- seconds until next movement direction needs choosing
+   self.nextthink=rnd(1.5)+.5
+  end
+ end
 end
 
 function critter:move()
-	if self.pinned then return end
+ if self.pinned then return end
 
-	self:think()
+ self:think()
  actor.move(self)
 
-	if self.walled then
-		self.vel.x*=-1
-	end
-	if self.vel.x!=0 then
-		self.flipped=self.vel.x<0
-	end
+ if self.walled then
+  self.vel.x*=-1
+ end
+ if self.vel.x!=0 then
+  self.flipped=self.vel.x<0
+ end
 end
 
 --------------------------------
 -- rahonavis
 
 rahonavis = critter.subclass{
-	__name="rahonavis",
+ __name="rahonavis",
  run={m=80},
-	jump=180,
+ jump=180,
  sprites={
   stand=76,
   walk={76, 77},
-		pinned=93,
-		struggle={93, 92},
-		eat=75,
-		jump=91
+  pinned=93,
+  struggle={93, 92},
+  eat=75,
+  jump=91
  },
-	danger=true,
+ danger=true,
 }
 
 function rahonavis:init(...)
-	critter.init(self, ...)
-	self.health=12
-	self.eating=false
-	self.direction=1
-	if self.x>world:pixelbox():middle().x then
-		self.direction=-1
-	end
+ critter.init(self, ...)
+ self.health=12
+ self.eating=false
+ self.direction=1
+ if self.x>world:pixelbox():middle().x then
+  self.direction=-1
+ end
 end
 
 function rahonavis:sprite()
-	if self.eating then
-		return self.sprites.eat
-	elseif not self.grounded then
-		return self.sprites.jump
-	else
-		return critter.sprite(self)
-	end
+ if self.eating then
+  return self.sprites.eat
+ elseif not self.grounded then
+  return self.sprites.jump
+ else
+  return critter.sprite(self)
+ end
 end
 
 function rahonavis:mouth()
-	local x=6
-	if self.flipped then x=2 end
-	return {
-		x=self.x+x,
-		y=flr(self.y)+8,
-	}
+ local x=6
+ if self.flipped then x=2 end
+ return {
+  x=self.x+x,
+  y=flr(self.y)+8,
+ }
 end
 
 function rahonavis:think()
-	if self.rethink==nil then
-		self.rethink=rnd(3)
-		self.direction*=-1
-	end
-	self.rethink-=dt
-	if self.rethink<=0 then
-		self.rethink=nil
-	end
+ if self.rethink==nil then
+  self.rethink=rnd(3)
+  self.direction*=-1
+ end
+ self.rethink-=dt
+ if self.rethink<=0 then
+  self.rethink=nil
+ end
 
-	if self.walled and self.grounded then
-		self.vel.y-=self.jump
-	end
-	if self.eating then
-		self.vel.x=0
-	else
- 	self.vel.x=self.run.m*self.direction
-	end
+ if self.walled and self.grounded then
+  self.vel.y-=self.jump
+ end
+ if self.eating then
+  self.vel.x=0
+ else
+  self.vel.x=self.run.m*self.direction
+ end
 end
 
 function rahonavis:move()
-	critter.move(self)
-	self.eating=false
+ critter.move(self)
+ self.eating=false
 
-	if not self.pinned then
-		for actor in all(world.actors) do
-			if actor.type!=rahonavis and actor:overlaps(self) then
-				self.eating=true
-				actor.pinned=true
-				self.x=actor.x
-				actor:munch(dt)
-				if actor.health<=0 then
-					self.direction=rndchoice({1,-1})
-				end
+ if not self.pinned then
+  for actor in all(world.actors) do
+   if actor.type!=rahonavis and actor:overlaps(self) then
+    self.eating=true
+    actor.pinned=true
+    self.x=actor.x
+    actor:munch(dt)
+    if actor.health<=0 then
+     self.direction=rndchoice({1,-1})
+    end
 
-				if self.eatparts==nil then
-					local args=self:mouth()
-					args.colors={8,8,14}
-					args.rate=20
-					self.eatparts=world:particles(args)
-				end
-				break
-			end
-		end
-	end
-	if not self.eating and self.eatparts then
-		self.eatparts:stop()
-		self.eatparts=nil
-	end
+    if self.eatparts==nil then
+     local args=self:mouth()
+     args.colors={8,8,14}
+     args.rate=20
+     self.eatparts=world:particles(args)
+    end
+    break
+   end
+  end
+ end
+ if not self.eating and self.eatparts then
+  self.eatparts:stop()
+  self.eatparts=nil
+ end
 
-	if self.eatparts then
-		local m=self:mouth()
-		self.eatparts.x=m.x
-		self.eatparts.y=m.y
-	end
+ if self.eatparts then
+  local m=self:mouth()
+  self.eatparts.x=m.x
+  self.eatparts.y=m.y
+ end
 end
 
 --------------------------------
 -- majungasaurus
 
 majungasaurus = critter.subclass{
-	__name="rahonavis",
-	critter=false,
-	afraid=false,
+ __name="rahonavis",
+ critter=false,
+ afraid=false,
  run={m=40},
-	sprites={
-		body=70,
-		stand=87,
-		walk={87,103,87,119},
+ sprites={
+  body=70,
+  stand=87,
+  walk={87,103,87,119},
  },
-	w=4,
-	h=2,
+ w=4,
+ h=2,
 }
 
 function majungasaurus:move()
-	critter.move(self)
-	if self:overlaps(protagonist) then
-		local mm=self:middle()
-		local pm=protagonist:middle()
-		local dx=mm.x-pm.x
+ critter.move(self)
+ if self:overlaps(protagonist) then
+  local mm=self:middle()
+  local pm=protagonist:middle()
+  local dx=mm.x-pm.x
 
-		if protagonist.y>self.y+8 then
-			if self.flipped==(dx>0) then
-				protagonist.vel.x=-sign(dx)*200
-				protagonist.vel.y-=80
-				protagonist:munch(3)
-				world:particles{
-					x=(mm.x+pm.x)/2,
-					y=(mm.y+pm.y)/2,
-					color=8,
-					duration=0.2,
-					rate=500,
-				}
-			else
-				protagonist.vel.x=-sign(dx)*50
-			end
-		else
-				protagonist.vel.y=-80
-				protagonist.vel.x=-dx*10
-		end
-	end
+  if protagonist.y>self.y+8 then
+   if self.flipped==(dx>0) then
+    protagonist.vel.x=-sign(dx)*200
+    protagonist.vel.y-=80
+    protagonist:munch(3)
+    world:particles{
+     x=(mm.x+pm.x)/2,
+     y=(mm.y+pm.y)/2,
+     color=8,
+     duration=0.2,
+     rate=500,
+    }
+   else
+    protagonist.vel.x=-sign(dx)*50
+   end
+  else
+    protagonist.vel.y=-80
+    protagonist.vel.x=-dx*10
+  end
+ end
 end
 
 function majungasaurus:legsprite()
-	if self.vel.x!=0 then
-		local wf=flr(self.wfp/self.wfd)+1
-		return self.sprites.walk[wf]
-	end
-	return self.sprites.stand
+ if self.vel.x!=0 then
+  local wf=flr(self.wfp/self.wfd)+1
+  return self.sprites.walk[wf]
+ end
+ return self.sprites.stand
 end
 
 function majungasaurus:draw()
-	palt(0, false)
-	palt(12, true)
+ palt(0, false)
+ palt(12, true)
 
  spr(
   self.sprites.body,
@@ -904,7 +904,7 @@ function majungasaurus:draw()
   self.flipped
  )
 
-	palt()
+ palt()
 end
 
 --------------------------------
@@ -921,72 +921,72 @@ player = actor.subclass{
   stand=64,
   walk={80,64,96,64},
   crouch=66,
-		sleep=112,
-		dead=114,
+  sleep=112,
+  dead=114,
   jump={u=82,d=98},
-		eat={68, 84, fc={16,8}},
-		drink=100,
+  eat={68, 84, fc={16,8}},
+  drink=100,
  },
 }
 
 function player:init(...)
-	actor.init(self, ...)
-	self.j=0
-	self.eating=false
-	self.drinking=false
-	self.crouched=true
-	self.es=1
-	self.esd=0
-	self.efc=8
-	self.food={}
-	self.stats={
-		health=1,
-		food=.8,
-		water=.9,
-		sleep=1,
-	}
-	self.btndelay={}
-	self.score={
-		food=0,
-		water=0,
-		sleep=0,
-		mammals=0,
-		rahonavii=0,
-		fish=0,
-		days=0,
-	}
+ actor.init(self, ...)
+ self.j=0
+ self.eating=false
+ self.drinking=false
+ self.crouched=true
+ self.es=1
+ self.esd=0
+ self.efc=8
+ self.food={}
+ self.stats={
+  health=1,
+  food=.8,
+  water=.9,
+  sleep=1,
+ }
+ self.btndelay={}
+ self.score={
+  food=0,
+  water=0,
+  sleep=0,
+  mammals=0,
+  rahonavii=0,
+  fish=0,
+  days=0,
+ }
 end
 
 function player:munch(d)
-	self.health=self.stats.health*10
-	actor.munch(self, d)
-	self.stats.health=self.health/10
+ self.health=self.stats.health*10
+ actor.munch(self, d)
+ self.stats.health=self.health/10
 end
 
 function player:sprite()
-	if self.health<=0 then
-		return self.sprites.dead
-	elseif self.sleeping then
-		return self.sprites.sleep
-	elseif self.crouched then
-		if self.sleepcount and self.sleepcount>1.2 then
-			return self.sprites.sleep
-		else
-			return self.sprites.crouch
-		end
-	elseif self.drinking then
-		return self.sprites.drink
-	elseif self.eating then
-		self.esd+=1
-		if self.esd>=self.sprites.eat.fc[self.es] then
-			self.esd=0
-			self.es+=1
-			if self.sprites.eat[self.es] == nil then
-				self.es=1
-			end
-		end
+ if self.health<=0 then
+  return self.sprites.dead
+ elseif self.sleeping then
+  return self.sprites.sleep
+ elseif self.crouched then
+  if self.sleepcount and self.sleepcount>1.2 then
+   return self.sprites.sleep
+  else
+   return self.sprites.crouch
+  end
+ elseif self.drinking then
+  return self.sprites.drink
+ elseif self.eating then
+  self.esd+=1
+  if self.esd>=self.sprites.eat.fc[self.es] then
+   self.esd=0
+   self.es+=1
+   if self.sprites.eat[self.es] == nil then
+    self.es=1
+   end
+  end
   return self.sprites.eat[self.es]
-	elseif self.j>0 then
+ elseif self.j>0 then
   return self.sprites.crouch
  end
  return actor.sprite(self)
@@ -994,41 +994,41 @@ end
 
 -- is player standing on water
 function player:onwater()
-	local m=self:mouth()
-	return world:collides(m.x, m.y+1, 1, 1, sflags.wm)
+ local m=self:mouth()
+ return world:collides(m.x, m.y+1, 1, 1, sflags.wm)
 end
 
 -- coords of my mouth
 function player:mouth()
-	local c=self:middle()
-	c.y=self:hitbox().b
-	if self.flipped then
-		c.x-=4
-	else
-		c.x+=4
-	end
-	return c
+ local c=self:middle()
+ c.y=self:hitbox().b
+ if self.flipped then
+  c.x-=4
+ else
+  c.x+=4
+ end
+ return c
 end
 
 -- delayed button detection
 function player:dbtn(b)
-	local d=bound(.33-self.stats.sleep, 0.33, 0)*1.5
-	local r=false
-	if self.btndelay[b]==nil then
-		self.btndelay[b]=0
-	end
-	if btn(b) then
-		r=self.btndelay[b]>=d
-		self.btndelay[b]+=dt
-	else
-		self.btndelay[b]=0
-	end
-	return r
+ local d=bound(.33-self.stats.sleep, 0.33, 0)*1.5
+ local r=false
+ if self.btndelay[b]==nil then
+  self.btndelay[b]=0
+ end
+ if btn(b) then
+  r=self.btndelay[b]>=d
+  self.btndelay[b]+=dt
+ else
+  self.btndelay[b]=0
+ end
+ return r
 end
 
 function player:move()
-	if self.sleeping then return end
-	local slpadj=bound(self.stats.sleep*2, 1, 0.3)
+ if self.sleeping then return end
+ local slpadj=bound(self.stats.sleep*2, 1, 0.3)
 
  if btn(self.btn.l) then
   self.flipped=true
@@ -1043,23 +1043,23 @@ function player:move()
  end
 
  local run=self.run.m*slpadj
-	if btn(self.btn.s) then
-		run*=1.5
-	end
+ if btn(self.btn.s) then
+  run*=1.5
+ end
 
-	self.crouched=btn(self.btn.c)
-	if self.crouched then
-		if self.sleepcount==nil then
-			self.sleepcount=0
-		elseif not self:onwater() then
-			self.sleepcount+=dt
-			if self.sleepcount>3 then
-				self.sleepcount=nil
-				self.sleeping=true
-			end
-		end
-		self.vel.x=0
-	elseif self:dbtn(self.btn.l) and self.j<=0 then
+ self.crouched=btn(self.btn.c)
+ if self.crouched then
+  if self.sleepcount==nil then
+   self.sleepcount=0
+  elseif not self:onwater() then
+   self.sleepcount+=dt
+   if self.sleepcount>3 then
+    self.sleepcount=nil
+    self.sleeping=true
+   end
+  end
+  self.vel.x=0
+ elseif self:dbtn(self.btn.l) and self.j<=0 then
   self.vel.x-=self.run.a*dt
   self.vel.x=max(self.vel.x,-run)
  elseif self:dbtn(self.btn.r) and self.j<=0 then
@@ -1073,173 +1073,173 @@ function player:move()
   end
  end
 
-	if not self.crouched then
-		self.sleepcount=0
-	end
+ if not self.crouched then
+  self.sleepcount=0
+ end
 
  -- drink/eat
-	self.eating=false
-	self.drinking=false
-	if self.grounded and self:dbtn(self.btn.e) then
-		local m=self:mouth()
-		if #self.food>0 then
-			self.eating=true
-			self:eat()
-		elseif world:actorcollides(self, sflags.cn) then
-			self.eating=true
-			self.stats.food+=dt*.05
-			self.stats.water+=dt*.025
-		elseif self:onwater() and abs(self.vel.x)<dt then
-			self.drinking=true
-			self:drink()
-		end
-	end
-	if self.eating or self.drinking then
-		self.vel.x=0
-		self.acc.x=0
-	end
-	if not self.eating then
-		self.es=1
-		self.esd=0
-	end
+ self.eating=false
+ self.drinking=false
+ if self.grounded and self:dbtn(self.btn.e) then
+  local m=self:mouth()
+  if #self.food>0 then
+   self.eating=true
+   self:eat()
+  elseif world:actorcollides(self, sflags.cn) then
+   self.eating=true
+   self.stats.food+=dt*.05
+   self.stats.water+=dt*.025
+  elseif self:onwater() and abs(self.vel.x)<dt then
+   self.drinking=true
+   self:drink()
+  end
+ end
+ if self.eating or self.drinking then
+  self.vel.x=0
+  self.acc.x=0
+ end
+ if not self.eating then
+  self.es=1
+  self.esd=0
+ end
 
-	if self.eating and not self.eatparts then
-		local args=self:mouth()
-		args.colors={8,8,14}
-		args.rate=50
-		self.eatparts=world:particles(args)
-	elseif not self.eating and self.eatparts then
-		self.eatparts:stop()
-		self.eatparts=nil
-	end
-	if self.drinking and not self.drinkparts then
-		local args=self:mouth()
-		args.colors={7,12,1,13}
-		args.rate=8
-		self.drinkparts=world:particles(args)
-	elseif not self.drinking and self.drinkparts then
-		self.drinkparts:stop()
-		self.drinkparts=nil
-	end
+ if self.eating and not self.eatparts then
+  local args=self:mouth()
+  args.colors={8,8,14}
+  args.rate=50
+  self.eatparts=world:particles(args)
+ elseif not self.eating and self.eatparts then
+  self.eatparts:stop()
+  self.eatparts=nil
+ end
+ if self.drinking and not self.drinkparts then
+  local args=self:mouth()
+  args.colors={7,12,1,13}
+  args.rate=8
+  self.drinkparts=world:particles(args)
+ elseif not self.drinking and self.drinkparts then
+  self.drinkparts:stop()
+  self.drinkparts=nil
+ end
 
  actor.move(self)
 
  -- make sure we're still pinning food
-	if self.vel.x!=0 and #self.food>0 then
-		for f in all(self.food) do
-			if not self:overlaps(f) then
-				f.pinned=false
-				del(self.food, f)
-			end
-		end
-	end
+ if self.vel.x!=0 and #self.food>0 then
+  for f in all(self.food) do
+   if not self:overlaps(f) then
+    f.pinned=false
+    del(self.food, f)
+   end
+  end
+ end
 end
 
 -- reset sleep counter if player gets hurt
 function player:hurt(d)
-	actor.hurt(self, d, true)
-	self.sleepcount=0
-	if self.sleeptime!=nil then
-		self.sleeptime+=d*10
-	end
+ actor.hurt(self, d, true)
+ self.sleepcount=0
+ if self.sleeptime!=nil then
+  self.sleeptime+=d*10
+ end
 end
 
 -- decrement stats
 function player:age(dt)
-	local d=(1/day)*dt
-	local s=abs(self.vel.x)/self.run.m
-	self.stats.water-=d/3
-	self.stats.food-=d/5*(.6+s)
-	self.stats.sleep-=d/3
-	if isnight() then
-		self.stats.sleep-=d/5
-	else
-		self.stats.water-=d/3
-	end
+ local d=(1/day)*dt
+ local s=abs(self.vel.x)/self.run.m
+ self.stats.water-=d/3
+ self.stats.food-=d/5*(.6+s)
+ self.stats.sleep-=d/3
+ if isnight() then
+  self.stats.sleep-=d/5
+ else
+  self.stats.water-=d/3
+ end
 
-	local hd=(1-min(self.stats.food*2, 1))*2
-	hd+=(1-min(self.stats.water*2, 1))*2
-	self.stats.health-=d*hd
-	for k,v in pairs(self.stats) do
-		self.stats[k]=min(max(v,0),1)
-	end
+ local hd=(1-min(self.stats.food*2, 1))*2
+ hd+=(1-min(self.stats.water*2, 1))*2
+ self.stats.health-=d*hd
+ for k,v in pairs(self.stats) do
+  self.stats[k]=min(max(v,0),1)
+ end
 
-	if self.stats.sleep<=0 then
-		self.sleepcount=nil
-		self.sleeping=true
-	end
+ if self.stats.sleep<=0 then
+  self.sleepcount=nil
+  self.sleeping=true
+ end
 end
 
 function player:drink()
-	self.stats.water+=dt/20
-	self.score.water+=dt/20
+ self.stats.water+=dt/20
+ self.score.water+=dt/20
 end
 
 function player:eat()
-	local f=self.food[1]
-	local a=f:munch(8*dt)/100
-	self.stats.food+=a
-	self.stats.water+=a/2
-	self.score.food+=a
-	self.score.water+=a/2
-	f.x=self:mouth().x-f.w*4
-	f.y=self.y
-	f.flipped=self.flipped
-	if f.health<=0 then
-		del(self.food, f)
-		if f.type==critter then
-			self.score.mammals+=1
-		elseif f.type==fish then
-			self.score.fish+=1
-		elseif f.type==rahonavis then
-			self.score.rahonavii+=1
-		end
-	end
+ local f=self.food[1]
+ local a=f:munch(8*dt)/100
+ self.stats.food+=a
+ self.stats.water+=a/2
+ self.score.food+=a
+ self.score.water+=a/2
+ f.x=self:mouth().x-f.w*4
+ f.y=self.y
+ f.flipped=self.flipped
+ if f.health<=0 then
+  del(self.food, f)
+  if f.type==critter then
+   self.score.mammals+=1
+  elseif f.type==fish then
+   self.score.fish+=1
+  elseif f.type==rahonavis then
+   self.score.rahonavii+=1
+  end
+ end
 end
 
 function player:findfood(actors)
-	if self.vel.y<=0 then return end
-	for a in all(actors) do
-		if a.critter and self:overlaps(a) then
-			a.pinned=true
-			add(self.food, a)
-		end
-	end
+ if self.vel.y<=0 then return end
+ for a in all(actors) do
+  if a.critter and self:overlaps(a) then
+   a.pinned=true
+   add(self.food, a)
+  end
+ end
 end
 
 function player:snooze(dt)
-	if self.sleeptime==nil then
-		self.sleeptime=0
-	else
-		self.sleeptime+=dt
-	end
-	self.score.sleep+=dt
+ if self.sleeptime==nil then
+  self.sleeptime=0
+ else
+  self.sleeptime+=dt
+ end
+ self.score.sleep+=dt
 
-	local d=(1/day)*dt
-	self.stats.water-=d/6
-	self.stats.food-=d/5
-	self.stats.sleep+=d/3
-	if isnight() then
-		self.stats.sleep+=d/5
-	end
+ local d=(1/day)*dt
+ self.stats.water-=d/6
+ self.stats.food-=d/5
+ self.stats.sleep+=d/3
+ if isnight() then
+  self.stats.sleep+=d/5
+ end
 
-	local hd=1/3
-	hd+=min(self.stats.food*2-1, 0)
-	hd+=min(self.stats.food*2-1, 0)/3
-	self.stats.health+=d*hd
-	for k,v in pairs(self.stats) do
-		self.stats[k]=min(max(v,0),1)
-	end
+ local hd=1/3
+ hd+=min(self.stats.food*2-1, 0)
+ hd+=min(self.stats.food*2-1, 0)/3
+ self.stats.health+=d*hd
+ for k,v in pairs(self.stats) do
+  self.stats[k]=min(max(v,0),1)
+ end
 
-	-- check whether we woke up
-	if (self.stats.sleep>=1
-	  or self.sleeptime>day*2/3
-			or daytime<(day/60)) then
-		self.sleeptime=nil
-		self.sleeping=false
-		return true
-	end
-	return false
+ -- check whether we woke up
+ if (self.stats.sleep>=1
+   or self.sleeptime>day*2/3
+   or daytime<(day/60)) then
+  self.sleeptime=nil
+  self.sleeping=false
+  return true
+ end
+ return false
 end
 
 --------------------------------
@@ -1262,29 +1262,29 @@ world={
  pixels={
   w=8,h=8,
  },
-	stars={},
-	partgens={},
+ stars={},
+ partgens={},
  actors={},
-	critterpop={},
-	spawns={
-		critters={},
-		fish={},
-	},
-	nextfish=rnd(10),
-	prespawn={},
-	carrion={},
-	hadmajung=false,
+ critterpop={},
+ spawns={
+  critters={},
+  fish={},
+ },
+ nextfish=rnd(10),
+ prespawn={},
+ carrion={},
+ hadmajung=false,
 }
 
 function world:makestars(n)
-	colors={1,5,6,7,13}
-	for i=1,n do
-		add(self.stars, {
-			x=flr(rnd(128)),
-			y=flr(rnd(128)),
-			c=colors[flr(rnd(#colors)+1)]
-		})
-	end
+ colors={1,5,6,7,13}
+ for i=1,n do
+  add(self.stars, {
+   x=flr(rnd(128)),
+   y=flr(rnd(128)),
+   c=colors[flr(rnd(#colors)+1)]
+  })
+ end
 end
 
 function world:tilebox()
@@ -1308,294 +1308,294 @@ end
 
 -- pixel offset of the screen
 function world:offset()
-	local pb=self:pixelbox()
-	return {
-		x=pb.x-self.o.x,
-		y=pb.y-self.o.y,
-	}
+ local pb=self:pixelbox()
+ return {
+  x=pb.x-self.o.x,
+  y=pb.y-self.o.y,
+ }
 end
 
 -- unique key for current screen
 function world:screenkey()
-	return self.screens.x..","..self.screens.y
+ return self.screens.x..","..self.screens.y
 end
 
 -- add a partcle generator to the world
 function world:particles(args)
-	local p=partgen(args)
-	add(self.partgens, p)
-	return p
+ local p=partgen(args)
+ add(self.partgens, p)
+ return p
 end
 
 -- add an actor to the world
 function world:spawn(actor)
-	if actor!=nil and find(self.actors, actor)==nil then
- 	add(self.actors, actor)
-	end
+ if actor!=nil and find(self.actors, actor)==nil then
+  add(self.actors, actor)
+ end
 end
 
 -- remove an actor from the world
 function world:despawn(actor)
-	if find(self.actors, actor)!=nil then
-		if actor.type==critter then
-			local s=self:screenkey()
-			self.critterpop[s]-=1
-		end
-		del(self.actors, actor)
-	end
-	for pg in all(self.partgens) do
-		if pg.actor==actor then
-			pg:stop()
-		end
-	end
+ if find(self.actors, actor)!=nil then
+  if actor.type==critter then
+   local s=self:screenkey()
+   self.critterpop[s]-=1
+  end
+  del(self.actors, actor)
+ end
+ for pg in all(self.partgens) do
+  if pg.actor==actor then
+   pg:stop()
+  end
+ end
 end
 
 -- spawn the player
 function world:spawn_protagonist()
  local b=self:tilebox()
-	local p={x=32,y=64}
+ local p={x=32,y=64}
  for x=b.x, b.w+b.x do
   for y=b.y, b.h+b.y do
-			if mget(x,y)==64 then
-				p={x=x*self.pixels.w,y=y*self.pixels.h}
-				break
-			end
-		end
-	end
-	local p=player(p.x, p.y)
-	self:spawn(p)
-	return p
+   if mget(x,y)==64 then
+    p={x=x*self.pixels.w,y=y*self.pixels.h}
+    break
+   end
+  end
+ end
+ local p=player(p.x, p.y)
+ self:spawn(p)
+ return p
 end
 
 -- spawn all visible critters
 function world:findspawns()
-	-- should this screen have carrion
-	local s=self:screenkey()
-	if self.carrion[s]==nil then
-		self.carrion[s]=rnd()>0.05
-	end
+ -- should this screen have carrion
+ local s=self:screenkey()
+ if self.carrion[s]==nil then
+  self.carrion[s]=rnd()>0.05
+ end
 
  for a in all(self.actors) do
   if a.critter then
-		 local b=world:checkbounds(a:middle())
-			if b.x+b.y!=0 then
-	   del(world.actors, a)
-			end
+   local b=world:checkbounds(a:middle())
+   if b.x+b.y!=0 then
+    del(world.actors, a)
+   end
   end
  end
-	for p in all(self.partgens) do
-		p:stop()
-		del(self.partgens, p)
-	end
+ for p in all(self.partgens) do
+  p:stop()
+  del(self.partgens, p)
+ end
 
  local b=self:tilebox()
  self.spawns.critters={}
-	self.spawns.danger={}
-	self.spawns.apex={}
+ self.spawns.danger={}
+ self.spawns.apex={}
  self.spawns.fish={}
 
-	-- find the critters on the map
+ -- find the critters on the map
  for x=b.x, b.w+b.x do
   for y=b.y, b.h+b.y do
    local s=mget(x,y)
    if fget(s,sflags.cs) then
-				if majungasaurus:spriteset()[s] then
-					if self.carrion[self:screenkey()] then
-						add(self.spawns.apex,
-						 {x=x*self.pixels.w, y=y*self.pixels.h, type=majungasaurus})
-					end
-				elseif rahonavis:spriteset()[s] then
-					add(self.spawns.danger,
-					 {x=x*self.pixels.w, y=y*self.pixels.h, type=rahonavis})
-				else
-					add(self.spawns.critters,
-					 critter(x*self.pixels.w, y*self.pixels.h))
-				end
-			elseif fget(s,sflags.fs) then
-				add(self.spawns.fish,
-				 {x=x*self.pixels.w, y=y*self.pixels.h})
+    if majungasaurus:spriteset()[s] then
+     if self.carrion[self:screenkey()] then
+      add(self.spawns.apex,
+       {x=x*self.pixels.w, y=y*self.pixels.h, type=majungasaurus})
+     end
+    elseif rahonavis:spriteset()[s] then
+     add(self.spawns.danger,
+      {x=x*self.pixels.w, y=y*self.pixels.h, type=rahonavis})
+    else
+     add(self.spawns.critters,
+      critter(x*self.pixels.w, y*self.pixels.h))
+    end
+   elseif fget(s,sflags.fs) then
+    add(self.spawns.fish,
+     {x=x*self.pixels.w, y=y*self.pixels.h})
    end
   end
  end
 
-	self:spawn_critters()
+ self:spawn_critters()
 end
 
 function world:spawn_critters()
-	-- choose from available based on population
-	local s=self:screenkey()
-	local cn=#self.spawns.critters
+ -- choose from available based on population
+ local s=self:screenkey()
+ local cn=#self.spawns.critters
  if self.critterpop[s]==nil or self.critterpop[s]>cn then
-		self.critterpop[s]=3
-	end
-	local ids=range(#self.spawns.critters)
-	for i=1,self.critterpop[s] do
-		local ci=rndchoice(ids)
-		del(ids, ci)
-		local c=self.spawns.critters[ci]
-		self:spawn(c)
-	end
-	if rnd()>.5 then
-		self:spawn_danger()
-	end
+  self.critterpop[s]=3
+ end
+ local ids=range(#self.spawns.critters)
+ for i=1,self.critterpop[s] do
+  local ci=rndchoice(ids)
+  del(ids, ci)
+  local c=self.spawns.critters[ci]
+  self:spawn(c)
+ end
+ if rnd()>.5 then
+  self:spawn_danger()
+ end
 end
 
 function world:spawn_danger()
-	local c=rndchoice(self.spawns.danger)
-	if c then
-		self:spawn(c.type(c.x, c.y))
-	end
-	if #self.spawns.apex>0 then
-		local hasapex=false
-		for a in all(self.actors) do
-			c=rndchoice(self.spawns.apex)
-			if a.type==c.type then
-				hasapex=true
-				break
-			end
-		end
-		if not hasapex then
-			self:spawn(c.type(c.x, c.y))
-		end
-	end
+ local c=rndchoice(self.spawns.danger)
+ if c then
+  self:spawn(c.type(c.x, c.y))
+ end
+ if #self.spawns.apex>0 then
+  local hasapex=false
+  for a in all(self.actors) do
+   c=rndchoice(self.spawns.apex)
+   if a.type==c.type then
+    hasapex=true
+    break
+   end
+  end
+  if not hasapex then
+   self:spawn(c.type(c.x, c.y))
+  end
+ end
 end
 
 function world:spawn_fish()
-	if #self.spawns.fish>0 then
-		local s=rndchoice(self.spawns.fish)
-		s.pre=.5
-		add(self.prespawn, s)
-		self:particles{
-			x=s.x+4, y=s.y+8, colors={7},
-			duration=s.pre,
-			rate=5,
-		}
-	end
+ if #self.spawns.fish>0 then
+  local s=rndchoice(self.spawns.fish)
+  s.pre=.5
+  add(self.prespawn, s)
+  self:particles{
+   x=s.x+4, y=s.y+8, colors={7},
+   duration=s.pre,
+   rate=5,
+  }
+ end
 end
 
 function world:hasmajung()
-	for a in all(self.actors) do
-		if a.type==majungasaurus then
-			return true
-		end
-	end
-	return false
+ for a in all(self.actors) do
+  if a.type==majungasaurus then
+   return true
+  end
+ end
+ return false
 end
 
 -- advance daytime
 function world:advance(dt)
-	daytime+=dt
-	if daytime>day*2 then
-		daytime=0
-		world:morning()
-	end
-	for p in all(self.partgens) do
-		p:update(dt)
-		if p:done() then
-			del(self.partgens, p)
-		end
-		for s in all(self.prespawn) do
-			if s.pre==nil then s.pre=0  end
-			s.pre-=dt
-			if s.pre<=0 then
-				s.pre=nil
-				self:spawn(fish(s.x, s.y))
-				del(self.prespawn, s)
-			end
-		end
-	end
+ daytime+=dt
+ if daytime>day*2 then
+  daytime=0
+  world:morning()
+ end
+ for p in all(self.partgens) do
+  p:update(dt)
+  if p:done() then
+   del(self.partgens, p)
+  end
+  for s in all(self.prespawn) do
+   if s.pre==nil then s.pre=0  end
+   s.pre-=dt
+   if s.pre<=0 then
+    s.pre=nil
+    self:spawn(fish(s.x, s.y))
+    del(self.prespawn, s)
+   end
+  end
+ end
 
-	if self.nextdanger==nil then
-		self.nextdanger=3+rnd(8)
-	end
-	self.nextdanger-=dt
-	if self.nextdanger<=0 then
-		self.nextdanger=nil
-		self:spawn_danger()
-	end
-	if gamestate!=gs.sleep then
-		self.nextfish-=dt
-		if self.nextfish<=0 then
-			self.nextfish=rnd(7)
-			self:spawn_fish()
-		end
-	end
+ if self.nextdanger==nil then
+  self.nextdanger=3+rnd(8)
+ end
+ self.nextdanger-=dt
+ if self.nextdanger<=0 then
+  self.nextdanger=nil
+  self:spawn_danger()
+ end
+ if gamestate!=gs.sleep then
+  self.nextfish-=dt
+  if self.nextfish<=0 then
+   self.nextfish=rnd(7)
+   self:spawn_fish()
+  end
+ end
 
-	if self.hadmajung!=self:hasmajung() then
-		self.hadmajung=not self.hadmajung
-		if self.hadmajung then
-			minorize(0, notenames.e)
-		else
-			reloadmusic(0)
-		end
-	end
+ if self.hadmajung!=self:hasmajung() then
+  self.hadmajung=not self.hadmajung
+  if self.hadmajung then
+   minorize(0, notenames.e)
+  else
+   reloadmusic(0)
+  end
+ end
 
-	world:move_actors()
+ world:move_actors()
 end
 
 function world:move_actors()
-	for a in all(self.actors) do
-		a:move()
-		local b=self:checkbounds(a:middle())
-		if b.x!=0 or b.y!=0 then
-			if a==protagonist then
-				gamestate=gs.slide
-				self:translate(b)
-			else
-				if fading[a] == nil then
-					fading[a]=1
-					if gamestate==gs.sleep then
-						fading[a]=0
-					end
-					local pa=self:wrappoint{x=a.x,y=a.y}
-					a.x=pa.x
-					a.y=pa.y
-				else
-					fading[a]-=dt
-					if fading[a]<=0 then
-						del(world.actors, a)
-						fading[a]=nil
-					end
-				end
-			end
-		end
-	end
+ for a in all(self.actors) do
+  a:move()
+  local b=self:checkbounds(a:middle())
+  if b.x!=0 or b.y!=0 then
+   if a==protagonist then
+    gamestate=gs.slide
+    self:translate(b)
+   else
+    if fading[a] == nil then
+     fading[a]=1
+     if gamestate==gs.sleep then
+      fading[a]=0
+     end
+     local pa=self:wrappoint{x=a.x,y=a.y}
+     a.x=pa.x
+     a.y=pa.y
+    else
+     fading[a]-=dt
+     if fading[a]<=0 then
+      del(world.actors, a)
+      fading[a]=nil
+     end
+    end
+   end
+  end
+ end
 end
 
 -- a new day has dawned, update stuff
 function world:morning()
-	for s,p in pairs(self.critterpop) do
-		self.critterpop[s]=p+2
-	end
-	-- reset whether any tile has carrion
-	self.carrion={}
-	protagonist.score.days+=1
+ for s,p in pairs(self.critterpop) do
+  self.critterpop[s]=p+2
+ end
+ -- reset whether any tile has carrion
+ self.carrion={}
+ protagonist.score.days+=1
 end
 
 -- player has gone to sleep
 function world:startsleep()
-	for a in all(self.actors) do
-		if a!=protagonist then
-			del(self.actors, a)
-		end
-	end
-	for pg in all(self.partgens) do
-		pg:stop()
-	end
+ for a in all(self.actors) do
+  if a!=protagonist then
+   del(self.actors, a)
+  end
+ end
+ for pg in all(self.partgens) do
+  pg:stop()
+ end
 end
 
 -- check for collisions in actor
 function world:actorcollides(a, flag)
  local hb=a:hitbox()
-	return self:collides(hb.x, hb.y, hb.w, hb.h, flag)
+ return self:collides(hb.x, hb.y, hb.w, hb.h, flag)
 end
 
 -- check for collisions in box
 function world:collides(x,y,w,h, flag)
-	flag = flag or sflags.sm
+ flag = flag or sflags.sm
  for nx=x,x+w do
   for ny=y,y+h do
-		 local s=mget(flr(nx/8),flr(ny/8))
+   local s=mget(flr(nx/8),flr(ny/8))
    if fget(s,flag) then
     return s
    end
@@ -1630,11 +1630,11 @@ end
 
 -- wrap a coordinate point around the map
 function world:wrappoint(p)
-	local w=self.screens.w*self.tiles.w*self.pixels.w
-	local h=self.screens.h*self.tiles.h*self.pixels.h
-	p.x=wrap(p.x, w)
-	p.y=wrap(p.y, h)
-	return p
+ local w=self.screens.w*self.tiles.w*self.pixels.w
+ local h=self.screens.h*self.tiles.h*self.pixels.h
+ p.x=wrap(p.x, w)
+ p.y=wrap(p.y, h)
+ return p
 end
 
 -- move viewport to next screen
@@ -1674,36 +1674,36 @@ end
 
 function world:drawsky()
  local cs={12,13,2,1,0}
-	local cn=#cs-2
-	local ci=1
-	if daytime>day then
-		if daytime>=day*2-twilight then
-			ci+=flr((day*2-daytime)*cn/twilight)
-		else
-			ci=#cs
-		end
-	elseif daytime>=day-twilight then
-		ci+=cn-flr((day-daytime)*cn/twilight)
-	end
+ local cn=#cs-2
+ local ci=1
+ if daytime>day then
+  if daytime>=day*2-twilight then
+   ci+=flr((day*2-daytime)*cn/twilight)
+  else
+   ci=#cs
+  end
+ elseif daytime>=day-twilight then
+  ci+=cn-flr((day-daytime)*cn/twilight)
+ end
  rectfill(0,0,127,127,cs[ci])
-	if ci>1 then
-		for s in all(self.stars) do
-			if darker(cs[ci], s.c) then
-				pset(s.x, s.y, s.c)
-			end
-		end
-	end
+ if ci>1 then
+  for s in all(self.stars) do
+   if darker(cs[ci], s.c) then
+    pset(s.x, s.y, s.c)
+   end
+  end
+ end
 end
 
 function world:print(msg, x, y, c)
-	local o=self:offset()
-	x-=o.x
-	y-=o.y
-	print(msg, x,y, c)
+ local o=self:offset()
+ x-=o.x
+ y-=o.y
+ print(msg, x,y, c)
 end
 
 function world:draw()
-	self:drawsky()
+ self:drawsky()
  local tb=self:tilebox()
  local pb=self:pixelbox()
 
@@ -1734,8 +1734,8 @@ function world:draw()
   end
  end
 
-	function drawmaps(layer)
-		mapnight()
+ function drawmaps(layer)
+  mapnight()
   camera(pb.x-self.o.x, pb.y-self.o.y)
   map(tb.x,tb.y, pb.x,pb.y, tb.w,tb.h, layer)
   if wrapping then
@@ -1746,23 +1746,23 @@ function world:draw()
     layer
    )
   end
-		pal()
+  pal()
  end
 
  -- do the actual drawing
-	local bgl
-	if not wrapping and self.carrion[self:screenkey()] then
-		bgl=mlayer(sflags.mb, sflags.sm, sflags.cn)
-	else
-		bgl=mlayer(sflags.mb, sflags.sm)
-	end
-	drawmaps(bgl) -- background
+ local bgl
+ if not wrapping and self.carrion[self:screenkey()] then
+  bgl=mlayer(sflags.mb, sflags.sm, sflags.cn)
+ else
+  bgl=mlayer(sflags.mb, sflags.sm)
+ end
+ drawmaps(bgl) -- background
  for a in reverse(self.actors) do
   a:draw()
  end
-	for p in all(self.partgens) do
-		p:draw(self:offset())
-	end
+ for p in all(self.partgens) do
+  p:draw(self:offset())
+ end
  drawmaps(mlayer(sflags.mf)) -- foreground
  camera()
 end
@@ -1781,7 +1781,7 @@ function drawahud(s, bc, x,y, m)
 end
 
 function drawhud()
-	mapnight()
+ mapnight()
  rectfill(0,0,127,15,0)
  --heart
  drawahud(13,8, 0,0, protagonist.stats.health)
@@ -1791,7 +1791,7 @@ function drawhud()
  drawahud(45,12, 64,0, protagonist.stats.water)
  --sleep
  drawahud(61,7, 64,8, protagonist.stats.sleep)
-	pal()
+ pal()
 end
 
 --------------------------------
@@ -1801,37 +1801,37 @@ end
 function _init()
  protagonist=world:spawn_protagonist()
  world:findspawns()
-	world:makestars(128)
-	daytime=0
-	wakingtime=0
-	sleeptime=0
+ world:makestars(128)
+ daytime=0
+ wakingtime=0
+ sleeptime=0
 
-	fading={}
+ fading={}
 end
 
 -- so that the web player works
 function _update()
-	_update60()
-	_update60()
+ _update60()
+ _update60()
 end
 
 wasnight=false
 function _update60()
-	if gamestate==gs.gameover then
-		gotime+=dt
-		if gotime>8 and (btnp(4) or btnp(5)) then
-			run()
-		end
-		return
-	elseif gamestate==gs.init then
+ if gamestate==gs.gameover then
+  gotime+=dt
+  if gotime>8 and (btnp(4) or btnp(5)) then
+   run()
+  end
+  return
+ elseif gamestate==gs.init then
   if btnp(4) or btnp(5) then
    gamestate=gs.play
-		 music(0)
+   music(0)
   else
    return
   end
-	elseif gamestate==gs.play then
-		world:advance(dt)
+ elseif gamestate==gs.play then
+  world:advance(dt)
  elseif gamestate==gs.slide then
   if world:translate() then
    gamestate=gs.play
@@ -1839,136 +1839,136 @@ function _update60()
   else
    return
   end
-	elseif gamestate==gs.sleep then
-		local sdt=dt*10
-		sleeptime+=dt
-		world:advance(sdt)
-		if protagonist:snooze(sdt) then
-			gamestate=gs.play
-			sleeptime=0
-			wakingtime=.5
-		end
-		return
+ elseif gamestate==gs.sleep then
+  local sdt=dt*10
+  sleeptime+=dt
+  world:advance(sdt)
+  if protagonist:snooze(sdt) then
+   gamestate=gs.play
+   sleeptime=0
+   wakingtime=.5
+  end
+  return
  end
-	if wakingtime > 0 then
-		wakingtime-=dt
-	end
-	if isnight()!=wasnight then
-		wasnight=isnight()
-	end
+ if wakingtime > 0 then
+  wakingtime-=dt
+ end
+ if isnight()!=wasnight then
+  wasnight=isnight()
+ end
 
-	protagonist:findfood(world.actors)
-	protagonist:age(dt)
+ protagonist:findfood(world.actors)
+ protagonist:age(dt)
 
-	if protagonist.stats.health<=0 then
-		gamestate=gs.gameover
-		gotime=0
-	elseif protagonist.sleeping then
-		gamestate=gs.sleep
-		world:startsleep()
-	end
+ if protagonist.stats.health<=0 then
+  gamestate=gs.gameover
+  gotime=0
+ elseif protagonist.sleeping then
+  gamestate=gs.sleep
+  world:startsleep()
+ end
 end
 
 function drawsplash()
-	rectfill(16,16,111,57,5)
-	cursor(19,19)
-	cprint("masiakasaurus knopfleri", 8)
-	cprint(" mark knopfler's", 9)
-	cprint(" vicious lizard", 9)
-	cprint(" x to jump", 6)
-	cprint(" hold z to run or eat", 6)
-	cprint(" x or z to start", 7)
+ rectfill(16,16,111,57,5)
+ cursor(19,19)
+ cprint("masiakasaurus knopfleri", 8)
+ cprint(" mark knopfler's", 9)
+ cprint(" vicious lizard", 9)
+ cprint(" x to jump", 6)
+ cprint(" hold z to run or eat", 6)
+ cprint(" x or z to start", 7)
 end
 
 function drawgameover()
-	local p=protagonist:middle()
-	local o=world:offset()
-	local l=2
-	p.x-=o.x
-	p.y-=o.y-2
-	local d=(1-min(gotime/l, 1))*127
+ local p=protagonist:middle()
+ local o=world:offset()
+ local l=2
+ p.x-=o.x
+ p.y-=o.y-2
+ local d=(1-min(gotime/l, 1))*127
 
  color(0)
-	rectfill(0,0,127,p.y-d)
-	rectfill(0,p.y+d,127,127)
+ rectfill(0,0,127,p.y-d)
+ rectfill(0,p.y+d,127,127)
 
-	camera(o.x, o.y)
-	protagonist:draw()
-	camera()
-	if d<=0 then
-		d=(min(gotime/l-1, 1))*max(p.x, 127-p.x)
-		if d>8 then
-			clip(p.x-d, 0, d*2, 127)
-			line(0, p.y+1, 127, p.y+1, 8)
-			local tx=p.x+16
-			if p.x>64 then
-				tx-=64
-			end
-			print("game over", tx, p.y-4, 8)
-			clip()
-		else
-			line(p.x-d, p.y+1, p.x+d, p.y+1, 8)
-		end
-	end
+ camera(o.x, o.y)
+ protagonist:draw()
+ camera()
+ if d<=0 then
+  d=(min(gotime/l-1, 1))*max(p.x, 127-p.x)
+  if d>8 then
+   clip(p.x-d, 0, d*2, 127)
+   line(0, p.y+1, 127, p.y+1, 8)
+   local tx=p.x+16
+   if p.x>64 then
+    tx-=64
+   end
+   print("game over", tx, p.y-4, 8)
+   clip()
+  else
+   line(p.x-d, p.y+1, p.x+d, p.y+1, 8)
+  end
+ end
 
-	if gotime>l*2 then
-		local txt={
-			"days survived: "..protagonist.score.days,
-			"slept: "..flr(protagonist.score.sleep),
-			"drank: "..flr(protagonist.score.food*100),
-			"ate: "..flr(protagonist.score.food*100),
-			" - "..protagonist.score.mammals.." mammals",
-			" - "..protagonist.score.fish.." fish",
-			" - "..protagonist.score.rahonavii.." rahonavii",
-			"",
-			"x or z to restart",
-		}
-		local f=(gotime-l*2)*10
-		local i=0
-		cursor(8,8)
-		color(4)
-		for row in all(txt) do
-			if i+#row<f then
-				print(row)
-				i+=#row
-			else
-   	print(sub(row, 0, f-(i+#row)))
-				break
-			end
-		end
-	end
+ if gotime>l*2 then
+  local txt={
+   "days survived: "..protagonist.score.days,
+   "slept: "..flr(protagonist.score.sleep),
+   "drank: "..flr(protagonist.score.food*100),
+   "ate: "..flr(protagonist.score.food*100),
+   " - "..protagonist.score.mammals.." mammals",
+   " - "..protagonist.score.fish.." fish",
+   " - "..protagonist.score.rahonavii.." rahonavii",
+   "",
+   "x or z to restart",
+  }
+  local f=(gotime-l*2)*10
+  local i=0
+  cursor(8,8)
+  color(4)
+  for row in all(txt) do
+   if i+#row<f then
+    print(row)
+    i+=#row
+   else
+    print(sub(row, 0, f-(i+#row)))
+    break
+   end
+  end
+ end
 end
 
 function drawsleep(time)
-	local c=5
-	if (isnight()) c=6
-	local p=protagonist:middle()
-	local n=3
-	if wakingtime > 0 then
-		n=flr(n*2*wakingtime)
-	end
-	for i=0,n-1 do
-		x=p.x-6+i*4
-		local y=p.y-10+sin((sleeptime+dt*4*i))*3
-		world:print("z", x, y, 5)
-	end
+ local c=5
+ if (isnight()) c=6
+ local p=protagonist:middle()
+ local n=3
+ if wakingtime > 0 then
+  n=flr(n*2*wakingtime)
+ end
+ for i=0,n-1 do
+  x=p.x-6+i*4
+  local y=p.y-10+sin((sleeptime+dt*4*i))*3
+  world:print("z", x, y, 5)
+ end
 end
 
 function _draw()
  world:draw({x=0, y=16})
  drawhud()
  if gamestate==gs.init then
-		drawsplash()
+  drawsplash()
  end
-	if gamestate==gs.sleep then
-		drawsleep(min(sleeptime/2, .8))
-	elseif wakingtime > 0 then
-		drawsleep(wakingtime)
-	end
-	if gamestate==gs.gameover then
-		drawgameover()
-	end
-	drawstats()
+ if gamestate==gs.sleep then
+  drawsleep(min(sleeptime/2, .8))
+ elseif wakingtime > 0 then
+  drawsleep(wakingtime)
+ end
+ if gamestate==gs.gameover then
+  drawgameover()
+ end
+ drawstats()
 end
 __gfx__
 700000073333b3331111111100000000000000000000000000000000000000000000000000000000000000000bb0bbb00333033055ee2ee55555555555555555
