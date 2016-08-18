@@ -1273,6 +1273,7 @@ world={
 	nextfish=rnd(10),
 	prespawn={},
 	carrion={},
+	hadmajung=false,
 }
 
 function world:makestars(n)
@@ -1328,7 +1329,7 @@ end
 
 -- add an actor to the world
 function world:spawn(actor)
-	if find(self.actors, actor)==nil then
+	if actor!=nil and find(self.actors, actor)==nil then
  	add(self.actors, actor)
 	end
 end
@@ -1472,6 +1473,15 @@ function world:spawn_fish()
 	end
 end
 
+function world:hasmajung()
+	for a in all(self.actors) do
+		if a.type==majungasaurus then
+			return true
+		end
+	end
+	return false
+end
+
 -- advance daytime
 function world:advance(dt)
 	daytime+=dt
@@ -1495,7 +1505,6 @@ function world:advance(dt)
 		end
 	end
 
-
 	if self.nextdanger==nil then
 		self.nextdanger=3+rnd(8)
 	end
@@ -1509,6 +1518,15 @@ function world:advance(dt)
 		if self.nextfish<=0 then
 			self.nextfish=rnd(7)
 			self:spawn_fish()
+		end
+	end
+
+	if self.hadmajung!=self:hasmajung() then
+		self.hadmajung=not self.hadmajung
+		if self.hadmajung then
+			minorize(0, notenames.e)
+		else
+			reloadmusic(0)
 		end
 	end
 
@@ -1836,11 +1854,6 @@ function _update60()
 		wakingtime-=dt
 	end
 	if isnight()!=wasnight then
-		if isnight() then
-			minorize(0, notenames.e)
-		else
-			resetmusic(0)
-		end
 		wasnight=isnight()
 	end
 
