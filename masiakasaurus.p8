@@ -258,7 +258,7 @@ function altsfx(s, notealt)
 	local l=68
 	local b=0x3200+s*l
 	local notes={}
-	for i=0,l-1,2 do
+	for i=0,l-3,2 do
 		local b1=peek(b+i+1)
 		local b2=peek(b+i)
 		local note={
@@ -275,14 +275,14 @@ function altsfx(s, notealt)
 	return notes
 end
 
-function minorize(base)
+function minorize(m, base)
 	base=base%12
 	local minors={
   [(base+4)%12]=true,
   [(base+9)%12]=true,
   [(base+11)%12]=true,
 	}
-	altmusic(0, function(note)
+	altmusic(m, function(note)
 		local pc=note.pitch%12
 		if minors[pc] then
 			return {
@@ -290,6 +290,29 @@ function minorize(base)
 			}
 		end
 	end)
+end
+
+function reloadmusic(m)
+	local l=4
+ local b=0x3100+m*l
+	local res=band(peek(b),128)
+	local rep=band(peek(b+1),128)
+	local stp=band(peek(b+2),128)
+	for i=0,l-1 do
+		local s=band(peek(b+i),127)
+		if s!=0x42 then
+			reloadsfx(s)
+		end
+	end
+	if rep+stp==0 then
+  reloadmusic(m+1)
+	end
+end
+
+function reloadsfx(s)
+		local l=68
+		local b=0x3200+s*l
+		reload(b, l)
 end
 
 --------------------------------
@@ -1758,7 +1781,6 @@ end
 --------------------------------
 
 function _init()
-	minorize(notenames.e)
  protagonist=world:spawn_protagonist()
  world:findspawns()
 	world:makestars(128)
@@ -1775,6 +1797,7 @@ function _update()
 	_update60()
 end
 
+wasnight=false
 function _update60()
 	if gamestate==gs.gameover then
 		gotime+=dt
@@ -1811,6 +1834,14 @@ function _update60()
  end
 	if wakingtime > 0 then
 		wakingtime-=dt
+	end
+	if isnight()!=wasnight then
+		if isnight() then
+			minorize(0, notenames.e)
+		else
+			resetmusic(0)
+		end
+		wasnight=isnight()
 	end
 
 	protagonist:findfood(world.actors)
@@ -2221,4 +2252,3 @@ __music__
 00 41424344
 00 41424344
 00 41424344
-
