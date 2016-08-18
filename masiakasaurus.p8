@@ -186,6 +186,113 @@ function sign(x)
 end
 
 --------------------------------
+-- music
+--[[ memory format:
+0x3100 - song
+ each song is 4 bytes
+	the first bit of each byte is
+	a flag:
+	 byte 1: loop start
+		byte 2: loop back
+		byte 3: stop
+	the remainder of the byte is
+	the index of each of the 4 sfx
+	making up the channels of the
+	song
+
+0x3200 - sfx
+ each sfx is comprised of 64 two
+ byte notes, followed by two
+	bytes of metadata
+
+note format: 2 bytes, backwards
+byte 2:
+ 0EEEVVVI
+byte 1:
+ IIPPPPPP
+
+	EEE: effect (0-7)
+	VVV: volume (0-7)
+	III: instrument (0-7, split over bytes)
+	PPPPPP: pitch (0-63)
+
+sfx metadata:
+ byte 1 is probably loop start & end
+	byte 2 is probably volume
+]]
+--------------------------------
+
+notenames={
+	c=0,
+	cs=1,
+	d=2,
+	ds=3,
+	e=4,
+	f=5,
+	fs=6,
+	g=7,
+	gs=8,
+	a=9,
+	as=10,
+	b=11,
+}
+
+function altmusic(m, notealt)
+	local l=4
+ local b=0x3100+m*l
+	local res=band(peek(b),128)
+	local rep=band(peek(b+1),128)
+	local stp=band(peek(b+2),128)
+	for i=0,l-1 do
+		local s=band(peek(b+i),127)
+		if s!=0x42 then
+			altsfx(s, notealt)
+		end
+	end
+	if rep+stp==0 then
+  altmusic(m+1, notealt)
+	end
+end
+
+function altsfx(s, notealt)
+	local l=68
+	local b=0x3200+s*l
+	local notes={}
+	for i=0,l-1,2 do
+		local b1=peek(b+i+1)
+		local b2=peek(b+i)
+		local note={
+			pitch=band(b2, 63),
+			instrument=shl(band(b1, 1), 2)+shr(band(b2, 192), 6),
+			volume=shr(band(b1, 14), 1),
+			effect=shr(band(b1, 112), 4),
+		}
+		local nc=notealt(note) or {}
+		if nc.pitch then
+			poke(b+i, bor(band(192, b2), nc.pitch))
+		end
+	end
+	return notes
+end
+
+function minorize(base)
+	base=base%12
+	local minors={
+  [(base+4)%12]=true,
+  [(base+9)%12]=true,
+  [(base+11)%12]=true,
+	}
+	altmusic(0, function(note)
+		local pc=note.pitch%12
+		if minors[pc] then
+			return {
+				pitch=note.pitch-1
+			}
+		end
+	end)
+end
+
+--------------------------------
 -- coordinate types
 --------------------------------
 box = class()
@@ -1651,6 +1758,7 @@ end
 --------------------------------
 
 function _init()
+	minorize(notenames.e)
  protagonist=world:spawn_protagonist()
  world:findspawns()
 	world:makestars(128)
@@ -1984,7 +2092,7 @@ __map__
 0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 __sfx__
-010100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+0101000000070010700207003070040700507006070070700c0700d0700e0700f0701007011070120701307018070190701a0701b0701c0701d0701e0701f0702407025070260702707028070290702a0702b070
 011200003b0503b0503b050005003b0503b0503b050000000000036050380503b0503b05038050360503605031050310503105000000310503105031050000000000000000000000000000000000003605038050
 011200003874038740387400000038740387403874000000000000000000000000000000000000000000000034750347503475000000347503475034750000000000000000000000000000000000000000000000
 011200003472034720347200000034720347203472000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
@@ -2113,3 +2221,4 @@ __music__
 00 41424344
 00 41424344
 00 41424344
+
