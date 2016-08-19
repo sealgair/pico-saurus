@@ -283,9 +283,19 @@ end
 function getsound(s)
  local l=68
  local b=0x3200+s*l
+ return {
+  speed=peek(b+65),
+  --TODO: loop start / end
+ }
 end
 
 function setsound(s, args)
+ local l=68
+ local b=0x3200+s*l
+ if args.speed!=nil then
+  poke(b+65, args.speed)
+ end
+ --TODO: loop start / end
 end
 
 function getnote(s, n)
@@ -314,6 +324,18 @@ function setnote(s, n, args)
  end
 end
 
+function reloadmusic(m)
+ for s in all(getmusicsounds(m)) do
+  reloadsfx(s)
+ end
+end
+
+function reloadsfx(s)
+ local l=68
+ local b=0x3200+s*l
+ reload(b, l)
+end
+
 function minorize(m, base)
  base=base%12
  local minors={
@@ -332,16 +354,12 @@ function minorize(m, base)
  end
 end
 
-function reloadmusic(m)
+function settempo(m, speed)
  for s in all(getmusicsounds(m)) do
-  reloadsfx(s)
+  setsound(s, {
+   speed=flr(speed)
+  })
  end
-end
-
-function reloadsfx(s)
- local l=68
- local b=0x3200+s*l
- reload(b, l)
 end
 
 --------------------------------
@@ -1552,10 +1570,10 @@ function world:advance(dt)
 
  if self.hadmajung!=self:hasmajung() then
   self.hadmajung=not self.hadmajung
+  reloadmusic(0)
   if self.hadmajung then
    minorize(0, notenames.e)
-  else
-   reloadmusic(0)
+   settempo(0, 16)
   end
  end
 
