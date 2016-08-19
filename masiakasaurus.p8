@@ -192,6 +192,11 @@ function ceil(x)
  return -flr(-x)
 end
 
+-- round to closest integer
+function round(x)
+ return flr(x+.5)
+end
+
 -- returns 1 if x is positive, -1 if x is negative
 function sign(x)
  return x/abs(x)
@@ -278,6 +283,7 @@ function getmusicsounds(m)
 end
 
 function setmusic(m, args)
+ -- TODO
 end
 
 function getsound(s)
@@ -319,9 +325,13 @@ function setnote(s, n, args)
  local b=0x3200+s*sl+n*nl
  local b1=peek(b+1)
  local b2=peek(b)
- if args.pitch then
+ if args.pitch!=nil then
   poke(b, bor(band(192, b2), args.pitch))
  end
+ if args.volume!=nil then
+  poke(b+1, bor(band(241, b1), shl(args.volume, 1)))
+ end
+ -- TODO: instrument, effect
 end
 
 function reloadmusic(m)
@@ -348,7 +358,9 @@ function minorize(m, base)
    local note=getnote(s, n)
    local pc=note.pitch%12
    if minors[pc] then
-    setnote(s, n, {pitch=note.pitch-1})
+    setnote(s, n, {
+     pitch=note.pitch-1
+    })
    end
   end
  end
@@ -359,6 +371,17 @@ function settempo(m, speed)
   setsound(s, {
    speed=flr(speed)
   })
+ end
+end
+
+function altvolume(m, av)
+ for s in all(getmusicsounds(m)) do
+  for n=0,63 do
+   local note=getnote(s, n)
+   setnote(s, n, {
+    volume=bound(round(note.volume*av), 7, 0)
+   })
+  end
  end
 end
 
@@ -990,7 +1013,7 @@ function player:init(...)
   health=1,
   food=.8,
   water=.9,
-  sleep=1,
+  sleep=.8,
  }
  self.btndelay={}
  self.score={
@@ -1892,6 +1915,7 @@ function _update60()
   world:advance(sdt)
   if protagonist:snooze(sdt) then
    gamestate=gs.play
+   reloadmusic(0)
    sleeptime=0
    wakingtime=.5
   end
@@ -1913,6 +1937,8 @@ function _update60()
  elseif protagonist.sleeping then
   gamestate=gs.sleep
   world:startsleep()
+  reloadmusic(0)
+  altvolume(0, .8)
  end
 end
 
