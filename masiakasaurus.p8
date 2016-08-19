@@ -175,6 +175,18 @@ function wrap(val, max, min)
  return val
 end
 
+-- concatenate two list-like tables
+function concat(a, b)
+ local r={}
+ for v in all(a) do
+  add(r, v)
+ end
+ for v in all(b) do
+  add(r, v)
+ end
+ return r
+end
+
 -- closest integer above x
 function ceil(x)
  return -flr(-x)
@@ -207,14 +219,14 @@ end
 
 note format: 2 bytes, backwards
 byte 2:
- 0EEEVVVI
+ 0eeevvvi
 byte 1:
- IIPPPPPP
+ iipppppp
 
- EEE: effect (0-7)
- VVV: volume (0-7)
- III: instrument (0-7, split over bytes)
- PPPPPP: pitch (0-63)
+ eee: effect (0-7)
+ vvv: volume (0-7)
+ iii: instrument (0-7, split over bytes)
+ pppppp: pitch (0-63)
 
 sfx metadata:
  byte 1 is probably loop start & end
@@ -237,42 +249,69 @@ notenames={
  b=11,
 }
 
-function altmusic(m, notealt)
+function getmusic(m)
  local l=4
  local b=0x3100+m*l
- local res=band(peek(b),128)
- local rep=band(peek(b+1),128)
- local stp=band(peek(b+2),128)
- for i=0,l-1 do
-  local s=band(peek(b+i),127)
-  if s!=0x42 then
-   altsfx(s, notealt)
-  end
- end
- if rep+stp==0 then
-  altmusic(m+1, notealt)
- end
+ return {
+  i=m, b=b,
+  loopstart=band(peek(b),128)!=0,
+  loopback=band(peek(b+1),128)!=0,
+  stop=band(peek(b+2),128)!=0,
+ }
 end
 
-function altsfx(s, notealt)
- local l=68
- local b=0x3200+s*l
- local notes={}
- for i=0,l-3,2 do
-  local b1=peek(b+i+1)
-  local b2=peek(b+i)
-  local note={
-   pitch=band(b2, 63),
-   instrument=shl(band(b1, 1), 2)+shr(band(b2, 192), 6),
-   volume=shr(band(b1, 14), 1),
-   effect=shr(band(b1, 112), 4),
-  }
-  local nc=notealt(note) or {}
-  if nc.pitch then
-   poke(b+i, bor(band(192, b2), nc.pitch))
+function getmusicsounds(m)
+ local music=getmusic(m)
+ if sounds==nil then
+  sounds={}
+ end
+ for i=0,3 do
+  local s=band(peek(music.b+i),127)
+  if s!=0x42 then
+   add(sounds, s)
   end
  end
- return notes
+ if not music.loopback and not music.stop then
+  sounds = concat(a, getmusicsounds(m+1))
+ end
+ return sounds
+end
+
+function setmusic(m, args)
+end
+
+function getsound(s)
+ local l=68
+ local b=0x3200+s*l
+end
+
+function setsound(s, args)
+end
+
+function getnote(s, n)
+ local sl=68
+ local nl=2
+ local b=0x3200+s*sl+n*nl
+ local b1=peek(b+1)
+ local b2=peek(b)
+ return {
+  b=b, s=s, n=n,
+  pitch=band(b2, 63),
+  instrument=shl(band(b1, 1), 2)+shr(band(b2, 192), 6),
+  volume=shr(band(b1, 14), 1),
+  effect=shr(band(b1, 112), 4),
+ }
+end
+
+function setnote(s, n, args)
+ local sl=68
+ local nl=2
+ local b=0x3200+s*sl+n*nl
+ local b1=peek(b+1)
+ local b2=peek(b)
+ if args.pitch then
+  poke(b, bor(band(192, b2), args.pitch))
+ end
 end
 
 function minorize(m, base)
@@ -282,30 +321,20 @@ function minorize(m, base)
   [(base+9)%12]=true,
   [(base+11)%12]=true,
  }
- altmusic(m, function(note)
-  local pc=note.pitch%12
-  if minors[pc] then
-   return {
-    pitch=note.pitch-1
-   }
+ for s in all(getmusicsounds(m)) do
+  for n=0,63 do
+   local note=getnote(s, n)
+   local pc=note.pitch%12
+   if minors[pc] then
+    setnote(s, n, {pitch=note.pitch-1})
+   end
   end
- end)
+ end
 end
 
 function reloadmusic(m)
- local l=4
- local b=0x3100+m*l
- local res=band(peek(b),128)
- local rep=band(peek(b+1),128)
- local stp=band(peek(b+2),128)
- for i=0,l-1 do
-  local s=band(peek(b+i),127)
-  if s!=0x42 then
-   reloadsfx(s)
-  end
- end
- if rep+stp==0 then
-  reloadmusic(m+1)
+ for s in all(getmusicsounds(m)) do
+  reloadsfx(s)
  end
 end
 
@@ -2265,4 +2294,3 @@ __music__
 00 41424344
 00 41424344
 00 41424344
-
