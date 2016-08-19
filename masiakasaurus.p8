@@ -346,6 +346,17 @@ function reloadsfx(s)
  reload(b, l)
 end
 
+function altmusic(m, fn)
+ for s in all(getmusicsounds(m)) do
+  for n=0,63 do
+   local nc=fn(getnote(s, n))
+   if nc!=nil then
+    setnote(s, n, nc)
+   end
+  end
+ end
+end
+
 function minorize(m, base)
  base=base%12
  local minors={
@@ -353,17 +364,14 @@ function minorize(m, base)
   [(base+9)%12]=true,
   [(base+11)%12]=true,
  }
- for s in all(getmusicsounds(m)) do
-  for n=0,63 do
-   local note=getnote(s, n)
-   local pc=note.pitch%12
-   if minors[pc] then
-    setnote(s, n, {
-     pitch=note.pitch-1
-    })
-   end
+ altmusic(m, function(note)
+  local pc=note.pitch%12
+  if minors[pc] then
+   return {
+    pitch=note.pitch-1
+   }
   end
- end
+ end)
 end
 
 function settempo(m, speed)
@@ -375,14 +383,11 @@ function settempo(m, speed)
 end
 
 function altvolume(m, av)
- for s in all(getmusicsounds(m)) do
-  for n=0,63 do
-   local note=getnote(s, n)
-   setnote(s, n, {
-    volume=bound(round(note.volume*av), 7, 0)
-   })
-  end
- end
+ altmusic(m, function(note)
+  return {
+   volume=bound(round(note.volume*av), 7, 0)
+  }
+ end)
 end
 
 --------------------------------
@@ -1013,7 +1018,7 @@ function player:init(...)
   health=1,
   food=.8,
   water=.9,
-  sleep=.8,
+  sleep=1,
  }
  self.btndelay={}
  self.score={
