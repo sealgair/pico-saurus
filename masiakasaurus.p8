@@ -357,6 +357,14 @@ function altmusic(m, fn)
  end
 end
 
+function transpose(m, interval)
+ altmusic(m, function(note)
+  return {
+   pitch=note.pitch+interval
+  }
+ end)
+end
+
 function minorize(m, base)
  base=base%12
  local minors={
