@@ -717,7 +717,7 @@ function fish:hitbox()
 end
 
 function fish:splash()
- sfx(self.sounds.splash)
+ sfx(self.sounds.splash, 2)
  world:particles{
   x=self.x+4, y=self.y+4,
   colors={7,12,1,13},
@@ -979,7 +979,7 @@ function majungasaurus:think()
   local sm=self:middle()
   if abs(pm.y-sm.y)<8 and abs(pm.x-sm.x)<32 then
    self.angry=5
-   sfx(self.sounds.roar)
+   sfx(self.sounds.roar, 2)
   end
  end
 
@@ -1349,7 +1349,7 @@ function player:findfood(actors)
  for a in all(actors) do
   if a.critter and self:overlaps(a) then
    if not a.pinned then
-    sfx(a.sounds.pinned)
+    sfx(a.sounds.pinned, 2)
    end
    a.pinned=true
    add(self.food, a)
@@ -1673,11 +1673,7 @@ function world:advance(dt)
 
  if self.hadmajung!=self:hasmajung() then
   self.hadmajung=not self.hadmajung
-  reloadmusic(0)
-  if self.hadmajung then
-   minorize(0, notenames.e)
-   settempo(0, 16)
-  end
+  updatemusic()
  end
 
  world:move_actors()
@@ -1948,6 +1944,25 @@ end
 -- the game
 --------------------------------
 
+function updatemusic()
+ local m=0
+ reloadmusic(m)
+ if gamestate==gs.gameover then
+  settempo(m, 20)
+  transpose(m, -3)
+ elseif world:hasmajung() then
+  minorize(m, notenames.e)
+ else
+  if isnight() then
+   transpose(m, -1)
+  end
+  if gamestate==gs.sleep then
+   settempo(m, 20)
+   altvolume(m, .8)
+  end
+ end
+end
+
 function _init()
  protagonist=world:spawn_protagonist()
  world:findspawns()
@@ -1995,7 +2010,7 @@ function _update60()
   world:advance(sdt)
   if protagonist:snooze(sdt) then
    gamestate=gs.play
-   reloadmusic(0)
+   updatemusic()
    sleeptime=0
    wakingtime=.5
   end
@@ -2006,6 +2021,7 @@ function _update60()
  end
  if isnight()!=wasnight then
   wasnight=isnight()
+  updatemusic()
  end
 
  protagonist:findfood(world.actors)
@@ -2017,8 +2033,7 @@ function _update60()
  elseif protagonist.sleeping then
   gamestate=gs.sleep
   world:startsleep()
-  reloadmusic(0)
-  altvolume(0, .8)
+  updatemusic()
  end
 end
 
@@ -2418,4 +2433,3 @@ __music__
 00 41424344
 00 41424344
 00 41424344
-
