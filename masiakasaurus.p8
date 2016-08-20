@@ -928,6 +928,32 @@ majungasaurus = critter.subclass{
  h=2,
 }
 
+function majungasaurus:init(...)
+ critter.init(self, ...)
+ local tb=world:tilebox()
+ self.carrion=0
+ local i=0
+ for x=tb.l,tb.r do
+  for y=tb.t,tb.b do
+    local s=mget(x, y)
+    if fget(s,sflags.cn) then
+     self.carrion+=x*8
+     i+=1
+    end
+  end
+ end
+ self.carrion/=i
+end
+
+function majungasaurus:think()
+ local hb=self:hitbox()
+ if hb:contains({x=self.carrion,y=self.y+1}) then
+  self.vel.x=0
+ else
+  self.vel.x=self.run.m*sign(self.carrion-hb.x)
+ end
+end
+
 function majungasaurus:move()
  critter.move(self)
  if self:overlaps(protagonist) then
@@ -1363,12 +1389,12 @@ function world:makestars(n)
 end
 
 function world:tilebox()
- return {
-  x=self.screens.x*self.tiles.w+self.tiles.d.x,
-  y=self.screens.y*self.tiles.h+self.tiles.d.y,
-  w=self.tiles.w,
-  h=self.tiles.h,
- }
+ return box(
+  self.screens.x*self.tiles.w+self.tiles.d.x,
+  self.screens.y*self.tiles.h+self.tiles.d.y,
+  self.tiles.w,
+  self.tiles.h
+ )
 end
 
 function world:pixelbox()
@@ -2343,4 +2369,3 @@ __music__
 00 41424344
 00 41424344
 00 41424344
-
