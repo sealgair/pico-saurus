@@ -969,7 +969,11 @@ function majungasaurus:think()
 
  if self.angry then
   local dx=protagonist:middle().x-self:middle().x
-  self.vel.x=self.run.m*sign(dx)
+  if dx<8 then
+   self.vel.x=0
+  else
+   self.vel.x=self.run.m*sign(dx)
+  end
  else
   local hb=self:hitbox()
   if hb:contains({x=self.carrion,y=self.y+1}) then
