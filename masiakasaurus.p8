@@ -946,11 +946,29 @@ function majungasaurus:init(...)
 end
 
 function majungasaurus:think()
- local hb=self:hitbox()
- if hb:contains({x=self.carrion,y=self.y+1}) then
-  self.vel.x=0
+ if self.angry then
+  self.angry-=dt
+  if self.angry<=0 then
+   self.angry=nil
+  end
  else
-  self.vel.x=self.run.m*sign(self.carrion-hb.x)
+  local pm=protagonist:middle()
+  local sm=self:middle()
+  if abs(pm.y-sm.y)<8 and abs(pm.x-sm.x)<32 then
+   self.angry=5
+  end
+ end
+
+ if self.angry then
+  local dx=protagonist:middle().x-self:middle().x
+  self.vel.x=self.run.m*sign(dx)
+ else
+  local hb=self:hitbox()
+  if hb:contains({x=self.carrion,y=self.y+1}) then
+   self.vel.x=0
+  else
+   self.vel.x=self.run.m*sign(self.carrion-hb.x)
+  end
  end
 end
 
