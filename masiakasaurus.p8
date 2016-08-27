@@ -1279,6 +1279,8 @@ function player:move()
    if not self:overlaps(f) then
     f.pinned=false
     del(self.food, f)
+   else
+    f.y = self.y
    end
   end
  end
