@@ -265,7 +265,12 @@ function getmusic(m)
  }
 end
 
-function getmusicsounds(m)
+musicsoundscache={}
+function getmusicsounds(m, skip_cache)
+ if musicsoundscache[m]!=nil then
+  return musicsoundscache[m]
+ end
+
  local music=getmusic(m)
  if sounds==nil then
   sounds={}
@@ -277,7 +282,10 @@ function getmusicsounds(m)
   end
  end
  if not music.loopback and not music.stop then
-  sounds = concat(a, getmusicsounds(m+1))
+  sounds = concat(a, getmusicsounds(m+1), true)
+ end
+ if not skip_cache then
+  musicsoundscache[m]=sounds
  end
  return sounds
 end
