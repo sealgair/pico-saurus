@@ -613,7 +613,9 @@ function actor:move()
  for y=self.y,newy,sign(self.vel.y) do
   local c=world:collides(hb.x, y+dy, hb.w-1, 1)
   if c then
-   self.grounded=true
+   if y+dy>y then
+    self.grounded=true
+   end
    newy=y
    self.vel.y=0
    self:touch(c)
