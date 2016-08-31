@@ -541,6 +541,7 @@ function actor:init(x,y)
  self.y=y
  self.vel={x=0,y=0}
  self.acc={x=0,y=0}
+ self.slideratio=0
  self.flipped=false
  self.upsidedown=false
  self.grounded=false
@@ -616,6 +617,8 @@ function actor:move()
 
  --check for map collisions (y)
  local dy=-1
+ local slidew=round(self.w*8*self.slideratio)
+ local solidw=self.w*8-slidew*2
  if (self.vel.y>0) dy=hb.h-1
  self.grounded=false
  for y=self.y,newy,sign(self.vel.y) do
@@ -624,10 +627,29 @@ function actor:move()
    if y+dy>y then
     self.grounded=true
    end
-   newy=y
-   self.vel.y=0
-   self:touch(c)
-   break
+   local slidedir=0
+   if slidew>0 and self.vel.y>0 then
+    local c=world:collides(hb.x+slidew, y+dy, solidw-1, 1)
+    if not c then
+     local l=world:collides(hb.x, y+dy, slidew-1, 1)
+     local r=world:collides(hb.x+slidew+solidw, y+dy, slidew-1, 1)
+     if l and not r then
+      slidedir=1
+     elseif r and not l then
+      slidedir=-1
+     end
+    end
+   end
+
+   if slidedir!=0 then
+    self.x+=slidedir
+    self.grounded=false
+   else
+    newy=y
+    self.vel.y=0
+    self:touch(c)
+    break
+   end
   end
  end
  self.y=newy
@@ -1088,6 +1110,7 @@ player = actor.subclass{
 
 function player:init(...)
  actor.init(self, ...)
+ self.slideratio=0.25
  self.j=0
  self.eating=false
  self.drinking=false
@@ -2453,4 +2476,3 @@ __music__
 00 41424344
 00 41424344
 00 41424344
-
