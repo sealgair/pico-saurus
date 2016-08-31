@@ -2085,10 +2085,10 @@ function drawsplash()
  cprint("masiakasaurus knopfleri", 8)
  cprint(" mark knopfler's", 9)
  cprint(" vicious lizard", 9)
- cprint(" hold x to jump", 6)
- cprint(" hold z to run or eat", 6)
+ cprint(" hold c to jump", 6)
+ cprint(" hold x to run or eat", 6)
  cprint(" crouch to sleep", 6)
- cprint(" x or z to start", 7)
+ cprint(" x or c to start", 7)
 end
 
 function drawgameover()
