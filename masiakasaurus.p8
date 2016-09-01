@@ -1959,7 +1959,32 @@ end
 -- the hud
 --------------------------------
 
-function drawahud(s, bc, x,y, m)
+hudflash={
+ health=0, water=0, food=0, sleep=0
+}
+
+function flash(k, m, t)
+ local result=false
+ t=t or 0.5
+ local l=0.2
+ if m<=t then
+  if hudflash[k]<=0 then
+   hudflash[k]=l*6*m/t+l*2
+  else
+   hudflash[k]-=dt
+  end
+  if hudflash[k]<=l then
+   result=true
+  end
+ end
+ return result
+end
+
+function drawahud(s, bc, x,y, k)
+ local m=protagonist.stats[k]
+ if flash(k, m) then
+  bc=8
+ end
  rectfill(x+2,y, x+61*m,y+7, bc)
  spr(s, x,y)
  for c=1,6 do
@@ -1972,13 +1997,13 @@ function drawhud()
  mapnight()
  rectfill(0,0,127,15,0)
  --heart
- drawahud(13,8, 0,0, protagonist.stats.health)
+ drawahud(13,8, 0,0, 'health')
  --stomach
- drawahud(29,13, 0,8, protagonist.stats.food)
+ drawahud(29,13, 0,8, 'food')
  --water
- drawahud(45,12, 64,0, protagonist.stats.water)
+ drawahud(45,12, 64,0, 'water')
  --sleep
- drawahud(61,7, 64,8, protagonist.stats.sleep)
+ drawahud(61,7, 64,8, 'sleep')
  pal()
 end
 
