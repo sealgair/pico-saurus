@@ -1210,6 +1210,13 @@ function player:move()
  if self.sleeping then return end
  local slpadj=bound(self.stats.sleep*2, 1, 0.3)
 
+ local run=self.run.m*slpadj
+ local jump=self.jump*slpadj
+ if btn(self.btn.s) then
+  run*=1.5
+  jump*=1.1
+ end
+
  if btn(self.btn.l) then
   self.flipped=true
  elseif btn(self.btn.r) then
@@ -1218,13 +1225,8 @@ function player:move()
  if self:dbtn(self.btn.j) and self.grounded then
   self.j=min(self.j+self.jd,1)
  elseif self.j>0 then
-  self.vel.y-=self.jump*(1+self.j)*slpadj
+  self.vel.y-=jump*(1+self.j)
   self.j=0
- end
-
- local run=self.run.m*slpadj
- if btn(self.btn.s) then
-  run*=1.5
  end
 
  self.crouched=btn(self.btn.c)
@@ -1331,7 +1333,7 @@ function player:age(dt)
  local d=(1/day)*dt
  local s=abs(self.vel.x)/self.run.m
  self.stats.water-=d/3
- self.stats.food-=d/5*(.6+s)
+ self.stats.food-=(d/8)+(s/4000)
  self.stats.sleep-=d/3
  if isnight() then
   self.stats.sleep-=d/5
@@ -1353,8 +1355,9 @@ function player:age(dt)
 end
 
 function player:drink()
- self.stats.water+=dt/20
- self.score.water+=dt/20
+ local d=dt/6
+ self.stats.water+=d
+ self.score.water+=d
 end
 
 function player:eat()
