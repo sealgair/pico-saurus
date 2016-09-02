@@ -1098,6 +1098,7 @@ function player:init(...)
  self.eating=false
  self.drinking=false
  self.crouched=true
+ self.hurtflash=0
  self.es=1
  self.esd=0
  self.efc=8
@@ -1190,6 +1191,7 @@ function player:dbtn(b)
 end
 
 function player:move()
+ self.hurting=false --until proved otherwise
  if self.sleeping then return end
  local slpadj=bound(self.stats.sleep*2, 1, 0.3)
 
@@ -1305,14 +1307,39 @@ end
 -- reset sleep counter if player gets hurt
 function player:hurt(d)
  actor.hurt(self, d, true)
+ self.hurting=true
  self.sleepcount=0
  if self.sleeptime!=nil then
   self.sleeptime+=d*10
  end
 end
 
+function player:draw(...)
+ local flash=self.hurtflash>0.2
+ if flash then
+  for c in all({13, 5}) do
+   pal(c, 8)
+  end
+  for c in all({15, 6}) do
+   pal(c, 14)
+  end
+ end
+ actor.draw(self, ...)
+ if flash then
+  pal()
+  mapnight()
+ end
+end
+
 -- decrement stats
 function player:age(dt)
+ if self.hurting then
+  self.hurtflash-=dt
+  if (self.hurtflash<=0) self.hurtflash=0.4
+ else
+  self.hurtflash=0
+ end
+
  local d=(1/day)*dt
  local s=abs(self.vel.x)/self.run.m
  self.stats.water-=d/3
