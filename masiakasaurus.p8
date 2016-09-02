@@ -77,17 +77,6 @@ function bound(v, t, b)
  return max(min(v, t), b)
 end
 
--- return a table containing numbers from s (def 1) to e
-function range(e, s, d)
- local s=s or 1
- local d=d or 1
- local r={}
- for i=s,e,d do
-  add(r,i)
- end
- return r
-end
-
 -- randomly choose item from table
 function rndchoice(t)
  return t[flr(rnd(#t))+1]
@@ -102,16 +91,16 @@ function mlayer(...)
  return l
 end
 
-function drawstats()
- if showstats then
-  rectfill(0,120, 127,127, 5)
-  local m="#"..flr(stat(0))
-  m=m.."\t%"..flr(stat(1)*100)
-  m=m.."\ta:"..#world.actors
-  m=m.."\tvx:"..flr(protagonist.vel.x)
-  print(m, 2,122, 10)
- end
-end
+-- function drawstats()
+--  if showstats then
+--   rectfill(0,120, 127,127, 5)
+--   local m="#"..flr(stat(0))
+--   m=m.."\t%"..flr(stat(1)*100)
+--   m=m.."\ta:"..#world.actors
+--   m=m.."\tvx:"..flr(protagonist.vel.x)
+--   print(m, 2,122, 10)
+--  end
+-- end
 
 -- useful for iterating between x/y & w/h
 xywh={x='w', y='h'}
@@ -155,12 +144,6 @@ function mapnight()
    pal(f, t)
   end
  end
-end
-
--- print with color
-function cprint(msg, c)
- color(c)
- print(msg)
 end
 
 -- increment with hard bounds
@@ -290,9 +273,9 @@ function getmusicsounds(m, skip_cache)
  return sounds
 end
 
-function setmusic(m, args)
- -- todo
-end
+-- todo
+-- function setmusic(m, args)
+-- end
 
 function getsound(s)
  local l=68
@@ -1621,9 +1604,8 @@ function world:spawn_critters()
  if self.critterpop[s]==nil or self.critterpop[s]>cn then
   self.critterpop[s]=3
  end
- local ids=range(#self.spawns.critters)
  for i=1,self.critterpop[s] do
-  local ci=rndchoice(ids)
+  local ci=flr(rnd(#self.spawns.critters))
   del(ids, ci)
   local c=self.spawns.critters[ci]
   self:spawn(c)
@@ -2110,13 +2092,15 @@ end
 function drawsplash()
  rectfill(16,16,111,61,5)
  cursor(19,19)
- cprint("masiakasaurus knopfleri", 8)
- cprint(" mark knopfler's", 9)
- cprint(" vicious lizard", 9)
- cprint(" hold c to jump", 6)
- cprint(" hold x to run or eat", 6)
- cprint(" crouch to sleep", 6)
- cprint(" x or c to start", 7)
+ color(8)
+ print("masiakasaurus knopfleri")
+ print(" mark knopfler's")
+ print(" vicious lizard")
+ color(6)
+ print(" hold c to jump")
+ print(" hold x to run or eat")
+ print(" crouch to sleep")
+ print(" x or c to start")
 end
 
 function drawgameover()
@@ -2207,7 +2191,6 @@ function _draw()
  if gamestate==gs.gameover then
   drawgameover()
  end
- drawstats()
 end
 __gfx__
 700000073333b3331111111166666666556556651111111100000000000000003333333b3333b333115551510bb0bbb00333033055ee2ee55555555555555555
