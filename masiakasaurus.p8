@@ -1325,10 +1325,7 @@ function player:draw(...)
   end
  end
  actor.draw(self, ...)
- if flash then
-  pal()
-  mapnight()
- end
+ pal()
 end
 
 -- decrement stats
@@ -1367,19 +1364,20 @@ function player:age(dt)
  end
 end
 
+function player:addstat(key, val)
+ self.stats[key]+=val
+ self.score[key]+=val
+end
+
 function player:drink()
- local d=dt/6
- self.stats.water+=d
- self.score.water+=d
+ self:addstat('water', dt/6)
 end
 
 function player:eat()
  local f=self.food[1]
  local a=f:munch(8*dt)/100
- self.stats.food+=a
- self.stats.water+=a/2
- self.score.food+=a
- self.score.water+=a/2
+ self:addstat('food', a)
+ self:addstat('water', a/2)
  f.x=self:mouth().x-f.w*4
  f.y=self.y
  f.flipped=self.flipped
@@ -1468,10 +1466,7 @@ world={
  actors={},
  critterpop={},
  maxpop=3,
- spawns={
-  critters={},
-  fish={},
- },
+ spawns={},
  nextfish=rnd(10),
  prespawn={},
  carrion={},
@@ -1603,23 +1598,23 @@ function world:findspawns()
  -- find the critters on the map
  for x=b.x, b.w+b.x do
   for y=b.y, b.h+b.y do
+   local spawninfo={x=x*self.pixels.w, y=y*self.pixels.h}
    local s=mget(x,y)
    if fget(s,sflags.cs) then
     if majungasaurus:spriteset()[s] then
      if self:carrionvisible() then
-      add(self.spawns.apex,
-       {x=x*self.pixels.w, y=y*self.pixels.h, type=majungasaurus})
+      spawninfo.type=majungasaurus
+      add(self.spawns.apex, spawninfo)
      end
     elseif rahonavis:spriteset()[s] then
-     add(self.spawns.danger,
-      {x=x*self.pixels.w, y=y*self.pixels.h, type=rahonavis})
+     spawninfo.type=rahonavis
+     add(self.spawns.danger, spawninfo)
     else
      add(self.spawns.critters,
-      critter(x*self.pixels.w, y*self.pixels.h))
+      critter(spawninfo.x, spawninfo.y))
     end
    elseif fget(s,sflags.fs) then
-    add(self.spawns.fish,
-     {x=x*self.pixels.w, y=y*self.pixels.h})
+    add(self.spawns.fish, spawninfo)
    end
   end
  end
@@ -1682,9 +1677,7 @@ end
 
 function world:hasmajung()
  for a in all(self.actors) do
-  if a.type==majungasaurus then
-   return true
-  end
+  if (a.type==majungasaurus) return true
  end
  return false
 end
@@ -1702,7 +1695,7 @@ function world:advance(dt)
    del(self.partgens, p)
   end
   for s in all(self.prespawn) do
-   if s.pre==nil then s.pre=0  end
+   if (s.pre==nil) s.pre=0
    s.pre-=dt
    if s.pre<=0 then
     s.pre=nil
@@ -1747,11 +1740,9 @@ function world:move_actors()
     gamestate=gs.slide
     self:translate(b)
    else
-    if fading[a] == nil then
+    if fading[a]==nil then
      fading[a]=1
-     if gamestate==gs.sleep then
-      fading[a]=0
-     end
+     if (gamestate==gs.sleep) fading[a]=0
      local pa=self:wrappoint{x=a.x,y=a.y}
      a.x=pa.x
      a.y=pa.y
@@ -1812,10 +1803,6 @@ end
 -- check whether point is outside bounds
 function world:checkbounds(p)
  local b=self:pixelbox()
- b.l=b.x
- b.r=b.x+b.w
- b.t=b.y
- b.b=b.y+b.h
  local res={x=0,y=0}
 
  if p.x<b.l then
@@ -1862,9 +1849,6 @@ function world:translate(d)
  if done then
   for k,s in pairs(xywh) do
    self.screens[k]+=self.screens.d[k]
-   if self.screens[k]<0 or self.screens[k]>=self.screens[s] then
-   end
-
    local w=wrap(self.screens[k], self.screens[s])
    if w!=self.screens[k] then
     self.screens[k]=w
@@ -1898,13 +1882,6 @@ function world:drawsky()
    end
   end
  end
-end
-
-function world:print(msg, x, y, c)
- local o=self:offset()
- x-=o.x
- y-=o.y
- print(msg, x,y, c)
 end
 
 function world:draw()
@@ -2096,12 +2073,8 @@ function _update60()
    gamestate=gs.play
    updatemusic()
    sleeptime=0
-   wakingtime=.5
   end
   return
- end
- if wakingtime > 0 then
-  wakingtime-=dt
  end
  if isnight()!=wasnight then
   wasnight=isnight()
@@ -2167,14 +2140,15 @@ function drawgameover()
  end
 
  if gotime>l*2 then
+  local score=protagonist.score
   local txt={
-   "days survived: "..protagonist.score.days,
-   "slept: "..flr(protagonist.score.sleep),
-   "drank: "..flr(protagonist.score.food*100),
-   "ate: "..flr(protagonist.score.food*100),
-   " - "..protagonist.score.mammals.." mammals",
-   " - "..protagonist.score.fish.." fish",
-   " - "..protagonist.score.rahonavii.." rahonavii",
+   "days survived: "..score.days,
+   "slept: "..flr(score.sleep),
+   "drank: "..flr(score.food*100),
+   "ate: "..flr(score.food*100),
+   " - "..score.mammals.." mammals",
+   " - "..score.fish.." fish",
+   " - "..score.rahonavii.." rahonavii",
    "",
    "x or z to restart",
   }
@@ -2194,18 +2168,15 @@ function drawgameover()
  end
 end
 
-function drawsleep(time)
+function drawsleep()
  local c=5
  if (isnight()) c=6
  local p=protagonist:middle()
- local n=3
- if wakingtime > 0 then
-  n=flr(n*2*wakingtime)
- end
- for i=0,n-1 do
-  x=p.x-6+i*4
+ local o=world:offset()
+ for i=0,2 do
+  local x=p.x-6+i*4
   local y=p.y-10+sin((sleeptime+dt*4*i))*3
-  world:print("z", x, y, 5)
+  print("z", x-o.x, y-o.y, 5)
  end
 end
 
@@ -2216,9 +2187,7 @@ function _draw()
   drawsplash()
  end
  if gamestate==gs.sleep then
-  drawsleep(min(sleeptime/2, .8))
- elseif wakingtime > 0 then
-  drawsleep(wakingtime)
+  drawsleep()
  end
  if gamestate==gs.gameover then
   drawgameover()
