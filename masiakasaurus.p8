@@ -1638,9 +1638,6 @@ function world:spawn_critters()
   local c=self.spawns.critters[ci]
   self:spawn(c)
  end
- if rnd()>.5 then
-  self:spawn_danger()
- end
 end
 
 function world:spawn_danger()
@@ -1649,15 +1646,8 @@ function world:spawn_danger()
   self:spawn(c.type(c.x, c.y))
  end
  if #self.spawns.apex>0 then
-  local hasapex=false
-  for a in all(self.actors) do
-   c=rndchoice(self.spawns.apex)
-   if a.type==c.type then
-    hasapex=true
-    break
-   end
-  end
-  if not hasapex then
+  c=rndchoice(self.spawns.apex)
+  if not self:hasapex(c.type) then
    self:spawn(c.type(c.x, c.y))
   end
  end
@@ -1676,9 +1666,10 @@ function world:spawn_fish()
  end
 end
 
-function world:hasmajung()
+function world:hasapex(type)
+ type = type or majungasaurus
  for a in all(self.actors) do
-  if (a.type==majungasaurus) return true
+  if (a.type==type) return true
  end
  return false
 end
@@ -1724,7 +1715,7 @@ function world:advance(dt)
   end
  end
 
- if self.hadmajung!=self:hasmajung() then
+ if self.hadmajung!=self:hasapex() then
   self.hadmajung=not self.hadmajung
   updatemusic()
  end
@@ -2012,7 +2003,7 @@ function updatemusic()
  if gamestate==gs.gameover then
   settempo(m, 20)
   transpose(m, -3)
- elseif world:hasmajung() then
+ elseif world:hasapex() then
   minorize(m, notenames.e)
  else
   if isnight() then
