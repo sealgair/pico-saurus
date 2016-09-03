@@ -2095,12 +2095,13 @@ function _update60()
 end
 
 function drawsplash()
- rectfill(16,16,111,61,5)
+ rectfill(16,16,112,62,5)
+ rect(16,16,112,62,6)
  cursor(19,19)
- color(8)
+ color(9)
  print("masiakasaurus knopfleri")
- print(" mark knopfler's")
- print(" vicious lizard")
+ print("  mark knopfler's")
+ print("  vicious lizard")
  color(6)
  print(" hold c to jump")
  print(" hold x to run or eat")
@@ -2485,4 +2486,3 @@ __music__
 00 41424344
 00 41424344
 00 41424344
-
