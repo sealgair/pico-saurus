@@ -664,7 +664,7 @@ function actor:sprite()
  return self.sprites.stand
 end
 
-function actor:draw(o)
+function actor:draw()
  spr(
   self:sprite(),
   self.x, self.y,
@@ -1314,7 +1314,7 @@ function player:hurt(d)
  end
 end
 
-function player:draw(...)
+function player:draw()
  local flash=self.hurtflash>0.2
  if flash then
   for c in all({13, 5}) do
@@ -1324,7 +1324,7 @@ function player:draw(...)
    pal(c, 14)
   end
  end
- actor.draw(self, ...)
+ actor.draw(self)
  pal()
 end
 
@@ -2109,8 +2109,8 @@ function drawsplash()
   spr(1, x, 120)
   if ((x+16)%32==0) spr(28, x, 112)
  end
- psprites={80,64,96,64}
- spr(psprites[(flr(splashoff/8)%4)+1], splashoff, 112, 2,1)
+ local sprites=player.sprites.walk
+ spr(sprites[(flr(splashoff/8)%#sprites)+1], splashoff, 112, 2,1)
 end
 
 function drawgameover()
@@ -2490,4 +2490,3 @@ __music__
 00 41424344
 00 41424344
 00 41424344
-
