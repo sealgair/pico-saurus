@@ -962,6 +962,7 @@ function majungasaurus:init(...)
  critter.init(self, ...)
  local tb=world:tilebox()
  self.carrion=0
+ self.munched=0
  local i=0
  for x=tb.l,tb.r do
   for y=tb.t,tb.b do
@@ -1027,8 +1028,10 @@ function majungasaurus:move()
   local pm=protagonist:middle()
   local dx=mm.x-pm.x
 
-  if protagonist.y>self.y+8 then
+  if (self.munched>0) self.munched-=dt
+  if self.munched<=0 and protagonist.y>self.y-6 then
    if self.flipped==(dx>0) then
+    self.munched=0.2
     protagonist.vel.x=-sign(dx)*200
     protagonist.vel.y-=80
     protagonist:munch(3)
@@ -1061,9 +1064,9 @@ function majungasaurus:draw()
  palt(0, false)
  palt(12, true)
 
- local bx=self.x
  local hx=self.x
  local hy=self.y
+ local bx=hx
  if self.flipped then
   bx+=8
  else
@@ -1074,10 +1077,7 @@ function majungasaurus:draw()
   self.flipped
  )
  local hsk="look"
- if self.eating then
-  hsk="eat"
-  hy+=3
- end
+ if (self.eating) hsk="eat" hy+=3
  spr(self.sprites.head[hsk],
   hx, hy, 1,1,
   self.flipped
@@ -1187,11 +1187,8 @@ end
 function player:mouth()
  local c=self:middle()
  c.y=self:hitbox().b
- if self.flipped then
-  c.x-=4
- else
-  c.x+=4
- end
+ c.x+=4
+ if (self.flipped) c.x-=8
  return c
 end
 
@@ -1199,9 +1196,7 @@ end
 function player:dbtn(b)
  local d=bound(.33-self.stats.sleep, 0.33, 0)*1.5
  local r=false
- if self.btndelay[b]==nil then
-  self.btndelay[b]=0
- end
+ if (self.btndelay[b]==nil) self.btndelay[b]=0
  if btn(b) then
   r=self.btndelay[b]>=d
   self.btndelay[b]+=dt
@@ -1261,9 +1256,7 @@ function player:move()
   end
  end
 
- if not self.crouched then
-  self.sleepcount=0
- end
+ if (not self.crouched) self.sleepcount=0
 
  -- drink/eat
  self.eating=false
@@ -1281,14 +1274,8 @@ function player:move()
    self:drink()
   end
  end
- if self.eating or self.drinking then
-  self.vel.x=0
-  self.acc.x=0
- end
- if not self.eating then
-  self.es=1
-  self.esd=0
- end
+ if (self.eating or self.drinking) self.vel.x=0 self.acc.x=0
+ if (not self.eating) self.es=1 self.esd=0
 
  self:eatparticles()
  if self.drinking and not self.drinkparts then
@@ -1329,12 +1316,10 @@ end
 function player:draw()
  local flash=self.hurtflash>0.2
  if flash then
-  for c in all({13, 5}) do
-   pal(c, 8)
-  end
-  for c in all({15, 6}) do
-   pal(c, 14)
-  end
+  pal(13, 8)
+  pal(5, 8)
+  pal(15, 14)
+  pal(6, 14)
  end
  actor.draw(self)
  pal()
@@ -1492,7 +1477,7 @@ function world:makestars(n)
   add(self.stars, {
    x=flr(rnd(128)),
    y=flr(rnd(128)),
-   c=colors[flr(rnd(#colors)+1)]
+   c=rndchoice(colors)
   })
  end
 end
