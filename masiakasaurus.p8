@@ -60,7 +60,7 @@ function reverse(t)
  local n=#t+1
  return function()
   n-=1
-  if n>0 then return t[n] end
+  if (n>0) return t[n]
  end
 end
 
@@ -250,26 +250,18 @@ end
 
 musicsoundscache={}
 function getmusicsounds(m, skip_cache)
- if musicsoundscache[m]!=nil then
-  return musicsoundscache[m]
- end
+ if (musicsoundscache[m]!=nil) return musicsoundscache[m]
 
  local music=getmusic(m)
- if sounds==nil then
-  sounds={}
- end
+ if (sounds==nil) sounds={}
  for i=0,3 do
   local s=band(peek(music.b+i),127)
-  if s!=0x42 then
-   add(sounds, s)
-  end
+  if (s!=0x42) add(sounds, s)
  end
  if not music.loopback and not music.stop then
   sounds = concat(a, getmusicsounds(m+1), true)
  end
- if not skip_cache then
-  musicsoundscache[m]=sounds
- end
+ if (not skip_cache) musicsoundscache[m]=sounds
  return sounds
 end
 
@@ -692,9 +684,7 @@ function actor:hurt(d, keep)
  self.health-=d
  if self.health<=0 then
   self.health=0
-  if not keep then
-   world:despawn(self)
-  end
+  if (not keep) world:despawn(self)
  end
 end
 
@@ -764,9 +754,8 @@ end
 
 function fish:move()
  actor.move(self)
- if (not self.grounded
-   and not protagonist.grounded
-   and actor.hitbox(self):overlaps(protagonist:hitbox())) then
+ if not self.grounded
+   and self:overlaps(protagonist) then
   self.vel.x+=protagonist.vel.x*.75
   self.vel.y+=abs(protagonist.vel.x)*.5
  end
@@ -1934,12 +1923,17 @@ function world:draw()
  function drawmaps(layer)
   mapnight()
   camera(pb.x-self.o.x, pb.y-self.o.y)
-  map(tb.x,tb.y, pb.x,pb.y, tb.w,tb.h, layer)
+  map(
+   tb.x,tb.y,
+   pb.x,pb.y,
+   tb.w, min(tb.h, 56-tb.y),
+   layer
+  )
   if wrapping then
    map(
     w.c.x, w.c.y,
     pb.x+w.p.x, pb.y+w.p.y,
-    w.c.w,w.c.h,
+    w.c.w, min(w.c.h, 56-w.c.y),
     layer
    )
   end
