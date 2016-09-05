@@ -941,7 +941,7 @@ end
 -- majungasaurus
 
 majungasaurus = critter.subclass{
- __name="rahonavis",
+ __name="majungasaurus",
  critter=false,
  afraid=false,
  run={m=40},
@@ -976,14 +976,14 @@ function majungasaurus:init(...)
 end
 
 function majungasaurus:think()
+ local pm=protagonist:middle()
+ local sm=self:middle()
  if self.angry then
   self.angry-=dt
   if self.angry<=0 then
    self.angry=nil
   end
  else
-  local pm=protagonist:middle()
-  local sm=self:middle()
   if abs(pm.y-sm.y)<8 and abs(pm.x-sm.x)<32 then
    self.angry=5
    sfx(self.sounds.roar, 2)
@@ -992,8 +992,8 @@ function majungasaurus:think()
 
  self.eating=false
  if self.angry then
-  local dx=protagonist:middle().x-self:middle().x
-  if dx<8 then
+  local dx=pm.x-sm.x
+  if dx<8 and pm.y<self.y-4 then
    self.vel.x=0
    self.eating=true
   else
