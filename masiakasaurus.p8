@@ -1805,7 +1805,7 @@ end
 function world:collides(x,y,w,h, flag)
  flag = flag or sflags.sm
  for nx=x,x+w do
-  for ny=y,y+h do
+  for ny=y,min(y+h, 448) do --448 is the edge of the map
    local s=mget(flr(nx/8),flr(ny/8))
    if fget(s,flag) then
     return s
@@ -2511,4 +2511,3 @@ __music__
 00 41424344
 00 41424344
 00 41424344
-
