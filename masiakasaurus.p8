@@ -1555,7 +1555,7 @@ function world:findspawns()
  -- should this screen have carrion
  local s=self:screenkey()
  if self.carrion[s]==nil then
-  self.carrion[s]=rnd()>0.066
+  self.carrion[s]=rnd()>0.5
  end
 
  for a in all(self.actors) do
