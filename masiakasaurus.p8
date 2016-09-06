@@ -5,15 +5,13 @@ __lua__
 showstats=false
 
 -- game states:
-gs={
- gameover=-1,
- init=0,
- play=1,
- slide=2,
- sleep=3,
-}
+gs_gameover=-1
+gs_init=0
+gs_play=1
+gs_slide=2
+gs_sleep=3
 
-gamestate=gs.init
+gamestate=gs_init
 
 -- sprite flags
 sflags={
@@ -544,8 +542,8 @@ end
 
 function actor:middle()
  return {
-  x=self.x+self.w*8/2,
-  y=self.y+self.h*8/2,
+  x=self.x+self.w*4,
+  y=self.y+self.h*4,
  }
 end
 
@@ -1034,7 +1032,7 @@ function majungasaurus:move()
     self.munched=0.2
     protagonist.vel.x=-sign(dx)*200
     protagonist.vel.y-=80
-    protagonist:munch(3)
+    protagonist:munch(4)
     world:particles{
      x=(mm.x+pm.x)/2,
      y=(mm.y+pm.y)/2,
@@ -1135,8 +1133,8 @@ function player:init(...)
   food=0,
   water=0,
   sleep=0,
-  mammals=0,
-  rahonavii=0,
+  critter=0,
+  rahonavis=0,
   fish=0,
   days=0,
  }
@@ -1291,14 +1289,12 @@ function player:move()
  actor.move(self)
 
  -- make sure we're still pinning food
- if self.vel.x!=0 and #self.food>0 then
-  for f in all(self.food) do
-   if not self:overlaps(f) then
-    f.pinned=false
-    del(self.food, f)
-   else
-    f.y = self.y
-   end
+ for f in all(self.food) do
+  if not self:overlaps(f) then
+   f.pinned=false
+   del(self.food, f)
+  elseif self.vel.y>0 or self.vel.x+self.vel.y==0 then
+   f.y=self.y f.x=self:mouth().x-4
   end
  end
 end
@@ -1314,8 +1310,7 @@ function player:hurt(d)
 end
 
 function player:draw()
- local flash=self.hurtflash>0.2
- if flash then
+ if self.hurtflash>0.2 then
   pal(13, 8)
   pal(5, 8)
   pal(15, 14)
@@ -1381,20 +1376,16 @@ function player:eat()
  f.flipped=self.flipped
  if f.health<=0 then
   del(self.food, f)
-  if f.type==critter then
-   self.score.mammals+=1
-  elseif f.type==fish then
-   self.score.fish+=1
-  elseif f.type==rahonavis then
-   self.score.rahonavii+=1
+  if self.score[f.__name]!=nil then
+   self.score[f.__name]+=1
   end
  end
 end
 
 function player:findfood(actors)
- if self.vel.y<=0 then return end
+ if (self.vel.y<=0) return
  for a in all(actors) do
-  if a.critter and self:overlaps(a) then
+  if a.critter and a.y>=self.y and self:overlaps(a) then
    if not a.pinned then
     sfx(a.sounds.pinned, 2)
    end
@@ -1416,9 +1407,7 @@ function player:snooze(dt)
  self.stats.water-=d/6
  self.stats.food-=d/5
  self.stats.sleep+=d/3
- if isnight() then
-  self.stats.sleep+=d/5
- end
+ if (isnight()) self.stats.sleep+=d/5
 
  local hd=1/3
  hd+=min(self.stats.food*2-1, 0)
@@ -1539,9 +1528,7 @@ function world:despawn(actor)
   del(self.actors, actor)
  end
  for pg in all(self.partgens) do
-  if pg.actor==actor then
-   pg:stop()
-  end
+  if (pg.actor==actor) pg:stop()
  end
 end
 
@@ -1577,9 +1564,7 @@ function world:findspawns()
  for a in all(self.actors) do
   if a.critter then
    local b=world:checkbounds(a:middle())
-   if b.x+b.y!=0 then
-    del(world.actors, a)
-   end
+   if (b.x+b.y!=0) del(world.actors, a)
   end
  end
  for p in all(self.partgens) do
@@ -1638,9 +1623,11 @@ function world:spawn_critters()
 end
 
 function world:spawn_danger()
- local c=rndchoice(self.spawns.danger)
- if c then
-  self:spawn(c.type(c.x, c.y))
+ if self.critterpop[self:screenkey()]>0 then
+  local c=rndchoice(self.spawns.danger)
+  if c then
+   self:spawn(c.type(c.x, c.y))
+  end
  end
  if #self.spawns.apex>0 then
   c=rndchoice(self.spawns.apex)
@@ -1664,7 +1651,7 @@ function world:spawn_fish()
 end
 
 function world:hasapex(type)
- type = type or majungasaurus
+ type=type or majungasaurus
  for a in all(self.actors) do
   if (a.type==type) return true
  end
@@ -1684,7 +1671,7 @@ function world:advance(dt)
    del(self.partgens, p)
   end
   for s in all(self.prespawn) do
-   if (s.pre==nil) s.pre=0
+   s.pre=s.pre or 0
    s.pre-=dt
    if s.pre<=0 then
     s.pre=nil
@@ -1696,15 +1683,13 @@ function world:advance(dt)
 
  local pop=self.critterpop[self:screenkey()]
  local popadj=4-pop
- if self.nextdanger==nil then
-  self.nextdanger=(5+rnd(8))*popadj
- end
+ self.nextdanger=self.nextdanger or (3+rnd(5))*popadj
  self.nextdanger-=dt
  if self.nextdanger<=0 then
   self.nextdanger=nil
-  if (pop>0) self:spawn_danger()
+  self:spawn_danger()
  end
- if gamestate!=gs.sleep then
+ if gamestate!=gs_sleep then
   self.nextfish-=dt
   if self.nextfish<=0 then
    self.nextfish=rnd(2)*(1+popadj)
@@ -1726,12 +1711,12 @@ function world:move_actors()
   local b=self:checkbounds(a:middle())
   if b.x!=0 or b.y!=0 then
    if a==protagonist then
-    gamestate=gs.slide
+    gamestate=gs_slide
     self:translate(b)
    else
     if fading[a]==nil then
      fading[a]=1
-     if (gamestate==gs.sleep) fading[a]=0
+     if (gamestate==gs_sleep) fading[a]=0
      local pa=self:wrappoint{x=a.x,y=a.y}
      a.x=pa.x
      a.y=pa.y
@@ -2002,7 +1987,7 @@ end
 function updatemusic()
  local m=0
  reloadmusic(m)
- if gamestate==gs.gameover then
+ if gamestate==gs_gameover then
   settempo(m, 20)
   transpose(m, -3)
  elseif world:hasapex() then
@@ -2011,7 +1996,7 @@ function updatemusic()
   if isnight() then
    transpose(m, -1)
   end
-  if gamestate==gs.sleep then
+  if gamestate==gs_sleep then
    settempo(m, 20)
    altvolume(m, .8)
   end
@@ -2038,35 +2023,35 @@ end
 splashoff=55
 wasnight=false
 function _update60()
- if gamestate==gs.gameover then
+ if gamestate==gs_gameover then
   gotime+=dt
   if gotime>8 and (btnp(4) or btnp(5)) then
    run()
   end
   return
- elseif gamestate==gs.init then
+ elseif gamestate==gs_init then
   splashoff=wrap(splashoff+dt*player.run.m, 127, -16)
   if btnp(4) or btnp(5) then
-   gamestate=gs.play
+   gamestate=gs_play
    music(0)
   else
    return
   end
- elseif gamestate==gs.play then
+ elseif gamestate==gs_play then
   world:advance(dt)
- elseif gamestate==gs.slide then
+ elseif gamestate==gs_slide then
   if world:translate() then
-   gamestate=gs.play
+   gamestate=gs_play
    world:findspawns()
   else
    return
   end
- elseif gamestate==gs.sleep then
+ elseif gamestate==gs_sleep then
   local sdt=dt*10
   sleeptime+=dt
   world:advance(sdt)
   if protagonist:snooze(sdt) then
-   gamestate=gs.play
+   gamestate=gs_play
    updatemusic()
    sleeptime=0
   end
@@ -2081,10 +2066,10 @@ function _update60()
  protagonist:age(dt)
 
  if protagonist.stats.health<=0 then
-  gamestate=gs.gameover
+  gamestate=gs_gameover
   gotime=0
  elseif protagonist.sleeping then
-  gamestate=gs.sleep
+  gamestate=gs_sleep
   world:startsleep()
   updatemusic()
  end
@@ -2153,11 +2138,9 @@ function drawgameover()
    "slept: "..flr(score.sleep),
    "drank: "..flr(score.food*100),
    "ate: "..flr(score.food*100),
-   " - "..score.mammals.." mammals",
+   " - "..score.critter.." mammals",
    " - "..score.fish.." fish",
-   " - "..score.rahonavii.." rahonavii",
-   "",
-   "x or z to restart",
+   " - "..score.rahonavis.." rahonavii",
   }
   local f=(gotime-l*2)*10
   local i=0
@@ -2172,6 +2155,8 @@ function drawgameover()
     break
    end
   end
+  color(9)
+  print("\nx or z to restart")
  end
 end
 
@@ -2183,17 +2168,17 @@ function drawsleep()
  for i=0,2 do
   local x=p.x-6+i*4
   local y=p.y-10+sin((sleeptime+dt*4*i))*3
-  print("z", x-o.x, y-o.y, 5)
+  print("z", x-o.x, y-o.y, 9)
  end
 end
 
 function _draw()
- if (gamestate==gs.gameover) drawgameover()
+ if (gamestate==gs_gameover) drawgameover()
  if (gotime and gotime>0) return
- if (gamestate==gs.init) drawsplash(); return
+ if (gamestate==gs_init) drawsplash(); return
  world:draw({x=0, y=16})
  drawhud()
- if (gamestate==gs.sleep) drawsleep()
+ if (gamestate==gs_sleep) drawsleep()
 end
 __gfx__
 700000073333b3331111111166666666556556651111111100000000000000003333333b3333b333115551510bb0bbb00333033055ee2ee55555555555555555
@@ -2287,9 +2272,9 @@ dddd0000000dd0000ffddd0000ddbd50dddd000000000000ccc0004555ccccccccc0004555cccccc
 11000000000000000000000000000000000000000000000000001111000000000000000000000000000000000000111101c2e4b2000000000000000000000001
 0173c383c3c30000c272c3820000000140b3b3b3b3b3b3b3b3b3b3b3b3b3b34040b3b3b3b3b3b3b3b3b3b3b3b3b3304040b3b3b3b3b3b3b3b3b3b3b3b3b34040
 11000000000000b100c1e4d4b1000000c1e400000000000000111100000000000000000000000000000000000000001101010101c40000000000000000000001
-010073c3c36300e4010101b20000000140b3b3b3a1b3b3a2a1b3b3b3b3b3b34040b3b3b3b3b3b3a2b3b3b3b33030b3b3a0b3b3b3b3b3b3b3b3b3b3b3b3b3b340
+010073c3c36300e4010101010000000140b3b3b3a1b3b3a2a1b3b3b3b3b3b34040b3b3b3b3b3b3a2b3b3b3b33030b3b3a0b3b3b3b3b3b3b3b3b3b3b3b3b3b340
 1100000000001111111111111111111111110000e4b1d400000000000000000000000000000000000000000000000000000101010100000000b2c40000000000
-0000007363c30001010101010000000140b3b3b330303030303030b3b3b3b34040b3b3b3b3b3b33030a1b3b3a0b3b3b3b3b3b3b3b3b3b3a2b3a1b3a1b3929240
+0000007363c30001010101000000000140b3b3b330303030303030b3b3b3b34040b3b3b3b3b3b33030a1b3b3a0b3b3b3b3b3b3b3b3b3b3a2b3a1b3a1b3929240
 110000000000000011111111111111111111111111111100c100e400b100e4000000000000000000000000000000000000000000000000000101010000000000
 c2000000c3c372c38200000000b2e40140b3b3b3b3b3a093b3b3a0b3b3b3b34040b3b3b3b39230404030b3b3b3b3b3b3a1b3b3b3b3b3b3305050505050303040
 110000000000000000000000000000000011111111111111111111111111110000c1d4000000000000000000000000000000000000000001018200000000b201
@@ -2307,7 +2292,7 @@ c2000000c3c372c38200000000b2e40140b3b3b3b3b3a093b3b3a0b3b3b3b34040b3b3b3b3923040
 110000000011111111112020202011110000c1000000000000d4b10000c100e400b1000000c7d7001111c100000000000000b0e4c0e4c3b10000e5e500c0b0e4
 b1c10000c3c3e4b0e4c0b0e4c3000080a1b392303040403030b392b3b3928181404040403092b392b3303030a1b392b3b3b3a2b3b3a1a1b3b3b3a23030404040
 11000000111111111111111111111111111111110000000011111111111111111111111111111111111111110000001010101010101010101020202020109010
-01010000808001010101010180101010303030404040404040303030303081814040404040303030304040403030303030303030303030303030304040404040
+01010000800101010101010180101010303030404040404040303030303081814040404040303030304040403030303030303030303030303030304040404040
 cccccccccccccccccccccccccc282282cc282cc22228222228282c282cc22c282cc222282c28228228822822822822882c222282cccccccccccccccccccccccc
 ccdccdcccccccccccccccccccc2882882c282c288882888882282c282c2882282c288882cc28228822822888282882282288882ccccccccccccccccccccccccc
 dccdccdccdcccccccccccccccc2882882c288288222c28822c28822822882c288288222ccc2882282282288228228228288222cccccccccccccccccccccccccc
@@ -2490,3 +2475,4 @@ __music__
 00 41424344
 00 41424344
 00 41424344
+
