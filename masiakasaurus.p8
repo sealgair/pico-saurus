@@ -2011,12 +2011,6 @@ function _init()
  fading={}
 end
 
--- so that the web player works
-function _update()
- _update60()
- _update60()
-end
-
 splashoff=55
 wasnight=false
 function _update60()
@@ -2472,4 +2466,3 @@ __music__
 00 41424344
 00 41424344
 00 41424344
-
