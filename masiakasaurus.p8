@@ -24,7 +24,7 @@ sflags={
  cs=7, -- edible critter spawn
 }
 dt=1/60 --clock tick time
-g=9.8*60 -- gravity acceleration
+g=9.8/dt -- gravity acceleration
 day=60 -- day length in seconds
 twilight=6 -- twilight length
 maxnum=32767.99
@@ -87,6 +87,13 @@ function mlayer(...)
   l+=2^f
  end
  return l
+end
+
+function log(...)
+ for l in all{...} do
+  printh(l, "log.txt", haslogged==nil)
+  haslogged=true
+ end
 end
 
 -- function drawstats()
@@ -424,6 +431,10 @@ function box:overlaps(other)
  )
 end
 
+function box:parts()
+ return self.x, self.y, self.w, self.h
+end
+
 --------------------------------
 -- particles
 --------------------------------
@@ -568,65 +579,89 @@ function actor:move()
  end
 
  --update coords
- local newx=self.x+self.vel.x*dt
- local newy=self.y+self.vel.y*dt
+ -- local newx=self.x+self.vel.x*dt
+ -- local newy=self.y+self.vel.y*dt
 
- local hb=self:hitbox()
+ function trymove(axis)
+  local dist=self.vel[axis]*dt
+  if (dist==0) return
+  local dim=({x='w', y='h'})[axis]
+
+  local try=self:hitbox()
+  if (dist>0) try[axis]+=self[dim]*8-1
+  try[dim]=1
+  local was=0
+  for i=0,dist,sign(dist) do
+   try[axis]+=sign(dist)
+   local col=world:collides(try:parts())
+   if col then
+    self:touch(col)
+    self.vel[axis]=0
+    self[axis]+=i
+    return true
+   end
+   was=i
+  end
+  self[axis]+=dist
+  return false
+ end
 
  --check for map collisions (x)
- local dx=-1
- if (self.vel.x>0) dx=hb.w-1
- self.walled=false
- for x=hb.x,newx,sign(self.vel.x) do
-  local c=world:collides(x+dx, hb.y, 1, hb.h-1)
-  if c then
-   newx=x
-   self.vel.x=0
-   self.walled=true
-   self:touch(c)
-   break
-  end
- end
- self.x=newx
+ self.walled = trymove('x')
+ -- local dx=-1
+ -- if (self.vel.x>0) dx=hb.w-1
+ -- self.walled=false
+ -- for x=hb.x,newx,sign(self.vel.x) do
+ --  local c=world:collides(x+dx, hb.y, 1, hb.h-1)
+ --  if c then
+ --   newx=x
+ --   self.vel.x=0
+ --   self.walled=true
+ --   self:touch(c)
+ --   break
+ --  end
+ -- end
+ -- self.x=newx
 
  --check for map collisions (y)
- local dy=-1
- local slidew=round(self.w*8*self.slideratio)
- local solidw=self.w*8-slidew*2
- if (self.vel.y>0) dy=hb.h-1
- self.grounded=false
- for y=self.y,newy,sign(self.vel.y) do
-  local c=world:collides(hb.x, y+dy, hb.w-1, 1)
-  if c then
-   if y+dy>y then
-    self.grounded=true
-   end
-   local slidedir=0
-   if slidew>0 and self.vel.y>0 then
-    local c=world:collides(hb.x+slidew, y+dy, solidw-1, 1)
-    if not c then
-     local l=world:collides(hb.x, y+dy, slidew-1, 1)
-     local r=world:collides(hb.x+slidew+solidw, y+dy, slidew-1, 1)
-     if l and not r then
-      slidedir=1
-     elseif r and not l then
-      slidedir=-1
-     end
-    end
-   end
-
-   if slidedir!=0 then
-    self.x+=slidedir
-    self.grounded=false
-   else
-    newy=y
-    self.vel.y=0
-    self:touch(c)
-    break
-   end
-  end
- end
- self.y=newy
+ self.grounded = trymove('y')
+ -- local dy=-1
+ -- local slidew=round(self.w*8*self.slideratio)
+ -- local solidw=self.w*8-slidew*2
+ -- if (self.vel.y>0) dy=hb.h-1
+ -- self.grounded=false
+ -- for y=self.y,newy,sign(self.vel.y) do
+ --  local c=world:collides(hb.x, y+dy, hb.w-1, 1)
+ --  if c then
+ --   if y+dy>y then
+ --    self.grounded=true
+ --   end
+ --   local slidedir=0
+ --   if slidew>0 and self.vel.y>0 then
+ --    local c=world:collides(hb.x+slidew, y+dy, solidw-1, 1)
+ --    if not c then
+ --     local l=world:collides(hb.x, y+dy, slidew-1, 1)
+ --     local r=world:collides(hb.x+slidew+solidw, y+dy, slidew-1, 1)
+ --     if l and not r then
+ --      slidedir=1
+ --     elseif r and not l then
+ --      slidedir=-1
+ --     end
+ --    end
+ --   end
+ --
+ --   if slidedir!=0 then
+ --    self.x+=slidedir
+ --    self.grounded=false
+ --   else
+ --    newy=y
+ --    self.vel.y=0
+ --    self:touch(c)
+ --    break
+ --   end
+ --  end
+ -- end
+ -- self.y=newy
 end
 
 function actor:hitbox()
@@ -1760,8 +1795,8 @@ end
 -- check for collisions in box
 function world:collides(x,y,w,h, flag)
  flag = flag or sflags.sm
- for nx=x,x+w do
-  for ny=y,min(y+h, 448) do --448 is the edge of the map
+ for nx=x,x+w-1 do
+  for ny=y,min(y+h-1, 448) do --448 is the edge of the map
    local s=mget(flr(nx/8),flr(ny/8))
    if fget(s,flag) then
     return s
@@ -2204,7 +2239,7 @@ a49494229fff4f9ff449f44900000000000000000000000000425500094525544200000015f42451
 004499ffff4f940000000fffff900000000009ffff4000009b3424240000094549444900111511d1000000d01115111199442424650000600660066000666555
 049f49ff9f9ff4400000009f9f000000000000ff9f000000b3352554000000542445255012111111000000001211111149452554556006566556655666555555
 4ff9ff4f4ffff9440000000f400000000000000f4000000033454452000000095425425411111511000000001111111159454452565665555555555555555555
-ddd00000000000000000000000000000ddd0000000000000cccccccccccc22222cccccccccccc9cc000000000000000000000000000000000000000000000000
+ddd00000000dd0000000000000000000ddd0000000000000cccccccccccc22222cccccccccccc9cc000000000000000000000000000000000000000000000000
 0ffddd0000ddbd5000000000000000000ffddd0000000000cccccccc22220220022222ccc424499c000000000000000000000000000000000000000000000000
 000fffdddddff556ddd00000000dd000000fffdddddddd002222222222000020002200222428244c000000000000000000000180000018000000000000000000
 00000ffffdd000600ffddd0000ddbd5000000ffffddfddd0c000200002000020000000024244442400000000100000001000011a100011a00000000000000000
@@ -2466,4 +2501,3 @@ __music__
 00 41424344
 00 41424344
 00 41424344
-
