@@ -589,30 +589,44 @@ function actor:move()
  --update coords
  local dims={x='w', y='h'}
  function trymove(axis)
+  -- check for collisions along an axis of movement,
+  --  pushing the actor away from the collider if
+  --  they're only touching at the very edge
+  --  (as defined by self.slideratio)
+
   local dist=self.vel[axis]*dt
-  if (dist==0) return
+  if (dist==0) return -- didn't move
+  -- figure out axis & dimension names
   local dim=dims[axis]
   local opaxis=({x='y', y='x'})[axis]
   local opdim=dims[opaxis]
 
+  -- build master hit detection box
+  --  (1 pixel wide slice just in advance of the hitbox)
   local try=self:hitbox()
   if (dist>0) try[axis]+=self[dim]*8-1
   try[dim]=1
+
+  -- subset of hit try box which doesn't slide
   local solidtry=try:copy()
   solidtry[opaxis]+=solidtry[opdim]*self.slideratio
   solidtry[opdim]*=1-(2*self.slideratio)
 
+  -- top & bottom hit try boxes which do slide
   local uptry=try:copy()
   uptry[opdim]*=self.slideratio
   local downtry=uptry:copy()
   downtry[opaxis]+=try[opdim]-uptry[opdim]
 
   local touched=false
+  -- check each pixel of distance travelled for collision
   for i=0,dist,sign(dist) do
    for b in all{try, solidtry, uptry, downtry} do
+    -- increment coord of each detection box :(
     b[axis]+=sign(dist)
    end
    if try:worldcollides() then
+    -- There is *some* collision
     touched=true
     local col=solidtry:worldcollides()
     if col then -- touching solid ground
@@ -620,7 +634,7 @@ function actor:move()
      self.vel[axis]=0
      self[axis]+=i
      return true
-    else -- sliding past the edge
+    else -- sliding past the edge of ground
      local up=uptry:worldcollides()
      local down=downtry:worldcollides()
      local slidedir=0
