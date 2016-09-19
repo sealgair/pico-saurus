@@ -435,12 +435,8 @@ function box:overlaps(other)
  )
 end
 
-function box:parts()
- return self.x, self.y, self.w, self.h
-end
-
 function box:worldcollides()
- return world:collides(self:parts())
+ return world:collides(self.x, self.y, self.w, self.h)
 end
 
 --------------------------------
