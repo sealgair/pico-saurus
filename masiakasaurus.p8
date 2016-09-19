@@ -89,12 +89,12 @@ function mlayer(...)
  return l
 end
 
-function log(...)
- for l in all{...} do
-  printh(l, "log.txt", haslogged==nil)
-  haslogged=true
- end
-end
+-- function log(...)
+--  for l in all{...} do
+--   printh(l, "log.txt", haslogged==nil)
+--   haslogged=true
+--  end
+-- end
 
 -- function drawstats()
 --  if showstats then
@@ -402,6 +402,10 @@ function box:init(l,t,w,h)
  self.b=t+h
 end
 
+function box:copy()
+ return box(self.x,self.y, self.w,self.h)
+end
+
 function box:middle()
  return {
   x=self.x+self.w/2,
@@ -433,6 +437,10 @@ end
 
 function box:parts()
  return self.x, self.y, self.w, self.h
+end
+
+function box:worldcollides()
+ return world:collides(self:parts())
 end
 
 --------------------------------
@@ -526,7 +534,7 @@ function actor:init(x,y)
  self.y=y
  self.vel={x=0,y=0}
  self.acc={x=0,y=0}
- self.slideratio=0
+ self.slideratio=.2
  self.flipped=false
  self.upsidedown=false
  self.grounded=false
@@ -568,7 +576,7 @@ function actor:move()
  self.vel.y += self.acc.y*dt
  self.vel.y += g*dt
 
- --upgade graphical stuff :p
+ --upgade walking sprite position
  if self.vel.x==0 then
   self.wfp=0
  elseif self.sprites.walk then
@@ -579,89 +587,54 @@ function actor:move()
  end
 
  --update coords
- -- local newx=self.x+self.vel.x*dt
- -- local newy=self.y+self.vel.y*dt
-
+ local dims={x='w', y='h'}
  function trymove(axis)
   local dist=self.vel[axis]*dt
   if (dist==0) return
-  local dim=({x='w', y='h'})[axis]
+  local dim=dims[axis]
+  local opaxis=({x='y', y='x'})[axis]
+  local opdim=dims[opaxis]
 
   local try=self:hitbox()
   if (dist>0) try[axis]+=self[dim]*8-1
   try[dim]=1
-  local was=0
+  local solidtry=try:copy()
+  solidtry[opaxis]+=solidtry[opdim]*self.slideratio
+  solidtry[opdim]*=1-(2*self.slideratio)
+
+  local uptry=try:copy()
+  uptry[opdim]*=self.slideratio
+  local downtry=uptry:copy()
+  downtry[opaxis]+=try[opdim]-uptry[opdim]
+
+  local touched=false
   for i=0,dist,sign(dist) do
-   try[axis]+=sign(dist)
-   local col=world:collides(try:parts())
-   if col then
-    self:touch(col)
-    self.vel[axis]=0
-    self[axis]+=i
-    return true
+   for b in all{try, solidtry, uptry, downtry} do
+    b[axis]+=sign(dist)
    end
-   was=i
+   if try:worldcollides() then
+    touched=true
+    local col=solidtry:worldcollides()
+    if col then -- touching solid ground
+     self:touch(col)
+     self.vel[axis]=0
+     self[axis]+=i
+     return true
+    else -- sliding past the edge
+     local up=uptry:worldcollides()
+     local down=downtry:worldcollides()
+     local slidedir=0
+     if (up and not down) slidedir=1
+     if (down and not up) slidedir=-1
+     self[opaxis]+=slidedir
+    end
+   end
   end
   self[axis]+=dist
   return false
  end
-
- --check for map collisions (x)
  self.walled = trymove('x')
- -- local dx=-1
- -- if (self.vel.x>0) dx=hb.w-1
- -- self.walled=false
- -- for x=hb.x,newx,sign(self.vel.x) do
- --  local c=world:collides(x+dx, hb.y, 1, hb.h-1)
- --  if c then
- --   newx=x
- --   self.vel.x=0
- --   self.walled=true
- --   self:touch(c)
- --   break
- --  end
- -- end
- -- self.x=newx
-
- --check for map collisions (y)
  self.grounded = trymove('y')
- -- local dy=-1
- -- local slidew=round(self.w*8*self.slideratio)
- -- local solidw=self.w*8-slidew*2
- -- if (self.vel.y>0) dy=hb.h-1
- -- self.grounded=false
- -- for y=self.y,newy,sign(self.vel.y) do
- --  local c=world:collides(hb.x, y+dy, hb.w-1, 1)
- --  if c then
- --   if y+dy>y then
- --    self.grounded=true
- --   end
- --   local slidedir=0
- --   if slidew>0 and self.vel.y>0 then
- --    local c=world:collides(hb.x+slidew, y+dy, solidw-1, 1)
- --    if not c then
- --     local l=world:collides(hb.x, y+dy, slidew-1, 1)
- --     local r=world:collides(hb.x+slidew+solidw, y+dy, slidew-1, 1)
- --     if l and not r then
- --      slidedir=1
- --     elseif r and not l then
- --      slidedir=-1
- --     end
- --    end
- --   end
- --
- --   if slidedir!=0 then
- --    self.x+=slidedir
- --    self.grounded=false
- --   else
- --    newy=y
- --    self.vel.y=0
- --    self:touch(c)
- --    break
- --   end
- --  end
- -- end
- -- self.y=newy
 end
 
 function actor:hitbox()
