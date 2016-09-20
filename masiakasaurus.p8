@@ -2046,7 +2046,9 @@ function _update60()
   return
  elseif gamestate==gs_init then
   splashoff=wrap(splashoff+dt*player.run.m, 127, -16)
-  if btnp(4) or btnp(5) then
+  if btn(4) or btn(5) then
+   initqueued=true
+  elseif initqueued then
    gamestate=gs_play
    music(0)
   else
@@ -2102,7 +2104,11 @@ function drawsplash()
  print("hold c to jump")
  print("hold x to run or eat")
  print("crouch to sleep")
- color(1)
+ if initqueued then
+  color(14)
+ else
+  color(1)
+ end
  print("\nx or c to start")
 
  for x=0,120,8 do
