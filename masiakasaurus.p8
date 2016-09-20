@@ -435,8 +435,8 @@ function box:overlaps(other)
  )
 end
 
-function box:worldcollides()
- return world:collides(self.x, self.y, self.w, self.h)
+function box:parts()
+ return self.x, self.y, self.w, self.h
 end
 
 --------------------------------
@@ -603,40 +603,44 @@ function actor:move()
   if (dist>0) try[axis]+=self[dim]*8-1
   try[dim]=1
 
-  -- subset of hit try box which doesn't slide
-  local solidtry=try:copy()
-  solidtry[opaxis]+=solidtry[opdim]*self.slideratio
-  solidtry[opdim]*=1-(2*self.slideratio)
+  function slidedir(c)
+   -- determine whether collission
+   --  coordinate is solid (in the middle)
+   --  or needs to slide left or right
+   c-=try[opaxis] -- offset of collision from actor origin
+   local d=try[opdim] -- width of collision check
+   if c<d*self.slideratio then
+    return -1
+   elseif c>d-(d*self.slideratio) then
+    return 1
+   end
+   return 0
+  end
 
-  -- top & bottom hit try boxes which do slide
-  local uptry=try:copy()
-  uptry[opdim]*=self.slideratio
-  local downtry=uptry:copy()
-  downtry[opaxis]+=try[opdim]-uptry[opdim]
-
-  local touched=false
   -- check each pixel of distance travelled for collision
   for i=0,dist,sign(dist) do
    for b in all{try, solidtry, uptry, downtry} do
     -- increment coord of each detection box :(
     b[axis]+=sign(dist)
    end
-   if try:worldcollides() then
-    -- There is *some* collision
-    touched=true
-    local col=solidtry:worldcollides()
-    if col then -- touching solid ground
+   local cols=world:collides(try:parts())
+   if cols then
+    local slide
+    for c in all(cols) do
+     -- find any slide direction
+     slide=slidedir(c[opaxis])
+     if slide==0 then
+      -- override to no slide if solid
+      break
+     end
+    end
+    if slide==0 then -- touching solid ground
      self:touch(col)
      self.vel[axis]=0
      self[axis]+=i
      return true
     else -- sliding past the edge of ground
-     local up=uptry:worldcollides()
-     local down=downtry:worldcollides()
-     local slidedir=0
-     if (up and not down) slidedir=1
-     if (down and not up) slidedir=-1
-     self[opaxis]+=slidedir
+     self[opaxis]-=slide
     end
    end
   end
@@ -1778,15 +1782,17 @@ end
 -- check for collisions in box
 function world:collides(x,y,w,h, flag)
  flag = flag or sflags.sm
+ local res = {}
  for nx=x,x+w-1 do
   for ny=y,min(y+h-1, 448) do --448 is the edge of the map
    local s=mget(flr(nx/8),flr(ny/8))
    if fget(s,flag) then
-    return s
+    add(res, {x=nx,y=ny})
    end
   end
  end
- return false
+ if (#res<=0) return false
+ return res
 end
 
 -- check whether point is outside bounds
