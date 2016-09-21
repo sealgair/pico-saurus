@@ -1,6 +1,10 @@
 pico-8 cartridge // http://www.pico-8.com
 version 8
 __lua__
+-- Masiakasaurus knopfleri
+-- by Chase Caster
+-- special thanks: Scott D. Sampson & Mark Knopfler
+
 -- debug settings
 showstats=false
 
@@ -1278,11 +1282,12 @@ function player:move()
  -- drink/eat
  self.eating=false
  self.drinking=false
+ local hb=self:hitbox()
  if self.grounded and self:dbtn(self.btn.e) then
   if #self.food>0 then
    self.eating=true
    self:eat()
-  elseif world:carrionvisible() and world:actorcollides(self, sflags.cn) then
+  elseif world:carrionvisible() and world:collides(hb.x,hb.y,hb.w,hb.h, sflags.cn) then
    self.eating=true
    self.stats.food+=dt*.05
    self.stats.water+=dt*.025
@@ -1771,12 +1776,6 @@ function world:startsleep()
  for pg in all(self.partgens) do
   pg:stop()
  end
-end
-
--- check for collisions in actor
-function world:actorcollides(a, flag)
- local hb=a:hitbox()
- return self:collides(hb.x, hb.y, hb.w, hb.h, flag)
 end
 
 -- check for collisions in box
