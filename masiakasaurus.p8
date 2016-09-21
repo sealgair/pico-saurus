@@ -629,7 +629,7 @@ function actor:move()
    end
    local cols=world:collides(try:parts())
    if cols then
-    local slide
+    local slide, tile
     for c in all(cols) do
      -- find any slide direction
      slide=slidedir(c[opaxis])
@@ -637,9 +637,10 @@ function actor:move()
       -- override to no slide if solid
       break
      end
+     tile=c.tile
     end
     if slide==0 then -- touching solid ground
-     self:touch(col)
+     self:touch(tile)
      self.vel[axis]=0
      self[axis]+=i
      return true
@@ -1786,7 +1787,7 @@ function world:collides(x,y,w,h, flag)
   for ny=y,min(y+h-1, 448) do --448 is the edge of the map
    local s=mget(flr(nx/8),flr(ny/8))
    if fget(s,flag) then
-    add(res, {x=nx,y=ny})
+    add(res, {x=nx, y=ny, tile=s})
    end
   end
  end
