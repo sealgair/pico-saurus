@@ -2193,23 +2193,31 @@ function drawsleep()
  -- end
 end
 
-wateroff=0
+waterdt=0
+wateroff=1
 function move_water()
- if (wateroff<15) wateroff+=1; return
- wateroff=0
+ waterdt+=1
+ if waterdt>60 then
+  waterdt=0
+  wateroff*=-1
+ end
+ local watersin=sin(waterdt/60)
+ if ((waterdt%6)/10 > watersin) return
+
  for tile in all{2,5,6,22,34} do
-  for y=0,7 do
-   y+=flr(tile/16)*8
+  local x_origin=(tile%16)*8
+  local y_origin=flr(tile/16)*8
+  for y=y_origin,y_origin+7 do
    local row={}
-   for x=0,7 do
-    x+=(tile%16)*8
+   for x=x_origin,x_origin+7 do
     add(row, sget(x,y))
    end
-   add(row, row[1])
-   del(row, row[1])
    for x=0,7 do
     local c=row[x+1]
-    x+=(tile%16)*8
+    x+=wateroff
+    if (x>7) x-=8
+    if (x<0) x+=8
+    x+=x_origin
     sset(x,y, c)
    end
   end
