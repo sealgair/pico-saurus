@@ -2195,14 +2195,15 @@ end
 
 waterdt=0
 wateroff=1
+waterdist=0
 function move_water()
- waterdt+=1
+ waterdt+=.25
  if waterdt>60 then
   waterdt=0
   wateroff*=-1
  end
- local watersin=sin(waterdt/60)
- if ((waterdt%6)/10 > watersin) return
+ waterdist+=(-sin(waterdt/120))*.25
+ if (waterdist<1) return
 
  for tile in all{2,5,6,22,34} do
   local x_origin=(tile%16)*8
@@ -2214,7 +2215,7 @@ function move_water()
    end
    for x=0,7 do
     local c=row[x+1]
-    x+=wateroff
+    x+=wateroff*flr(waterdist)
     if (x>7) x-=8
     if (x<0) x+=8
     x+=x_origin
@@ -2222,6 +2223,7 @@ function move_water()
    end
   end
  end
+ waterdist-=flr(waterdist)
 end
 
 function _draw()
