@@ -2203,15 +2203,15 @@ function drawgameover()
 end
 
 function drawsleep()
- -- local c=5
- -- if (isnight()) c=6
- -- local p=protagonist:middle()
- -- local o=world:offset()
- -- for i=0,2 do
- --  local x=p.x-6+i*4
- --  local y=p.y-10+sin((sleeptime+dt*4*i))*3
- --  print("z", x-o.x, y-o.y, 10)
- -- end
+ local c=5
+ if (isnight()) c=6
+ local p=protagonist:middle()
+ local o=world:offset()
+ for i=0,2 do
+  local x=p.x-6+i*4
+  local y=p.y-10+sin((sleeptime+dt*4*i))*3
+  print("z", x-o.x, y-o.y, 10)
+ end
 end
 
 waterdt=0
