@@ -2141,65 +2141,65 @@ function drawsplash()
 end
 
 function drawgameover()
- -- local p=protagonist:middle()
- -- local o=world:offset()
- -- local l=2
- -- p.x-=o.x
- -- p.y-=o.y-2
- -- local d=(1-min(gotime/l, 1))*127
- --
- -- color(0)
- -- rectfill(0,0,127,p.y-d)
- -- rectfill(0,p.y+d,127,127)
- --
- -- camera(o.x, o.y)
- -- protagonist.hurtflash=0
- -- protagonist:draw()
- -- camera()
- -- if d<=0 then
- --  d=(min(gotime/l-1, 1))*max(p.x, 127-p.x)
- --  if d>8 then
- --   clip(p.x-d, 0, d*2, 127)
- --   line(0, p.y+1, 127, p.y+1, 8)
- --   local tx=p.x+16
- --   if p.x>64 then
- --    tx-=64
- --   end
- --   print("game over", tx, p.y-4, 8)
- --   clip()
- --  else
- --   line(p.x-d, p.y+1, p.x+d, p.y+1, 8)
- --  end
- -- end
- --
- -- if gotime>l*2 then
- --  if (protagonist.y-o.y<111) protagonist.y+=1
- --  local score=protagonist.score
- --  local txt={
- --   "days survived: "..score.days,
- --   "slept: "..flr(score.sleep),
- --   "drank: "..flr(score.food*100),
- --   "ate: "..flr(score.food*100),
- --   " - "..score.critter.." mammals",
- --   " - "..score.fish.." fish",
- --   " - "..score.rahonavis.." rahonavii",
- --  }
- --  local f=(gotime-l*2)*10
- --  local i=0
- --  cursor(8,8)
- --  color(4)
- --  for row in all(txt) do
- --   if i+#row<f then
- --    print(row)
- --    i+=#row
- --   else
- --    print(sub(row, 0, f-(i+#row)))
- --    break
- --   end
- --  end
- --  color(9)
- --  print("\nx or z to restart")
- -- end
+ local p=protagonist:middle()
+ local o=world:offset()
+ local l=2
+ p.x-=o.x
+ p.y-=o.y-2
+ local d=(1-min(gotime/l, 1))*127
+
+ color(0)
+ rectfill(0,0,127,p.y-d)
+ rectfill(0,p.y+d,127,127)
+
+ camera(o.x, o.y)
+ protagonist.hurtflash=0
+ protagonist:draw()
+ camera()
+ if d<=0 then
+  d=(min(gotime/l-1, 1))*max(p.x, 127-p.x)
+  if d>8 then
+   clip(p.x-d, 0, d*2, 127)
+   line(0, p.y+1, 127, p.y+1, 8)
+   local tx=p.x+16
+   if p.x>64 then
+    tx-=64
+   end
+   print("game over", tx, p.y-4, 8)
+   clip()
+  else
+   line(p.x-d, p.y+1, p.x+d, p.y+1, 8)
+  end
+ end
+
+ if gotime>l*2 then
+  if (protagonist.y-o.y<111) protagonist.y+=1
+  local score=protagonist.score
+  local txt={
+   "days survived: "..score.days,
+   "slept: "..flr(score.sleep),
+   "drank: "..flr(score.food*100),
+   "ate: "..flr(score.food*100),
+   " - "..score.critter.." mammals",
+   " - "..score.fish.." fish",
+   " - "..score.rahonavis.." rahonavii",
+  }
+  local f=(gotime-l*2)*10
+  local i=0
+  cursor(8,8)
+  color(4)
+  for row in all(txt) do
+   if i+#row<f then
+    print(row)
+    i+=#row
+   else
+    print(sub(row, 0, f-(i+#row)))
+    break
+   end
+  end
+  color(9)
+  print("\nx or z to restart")
+ end
 end
 
 function drawsleep()
