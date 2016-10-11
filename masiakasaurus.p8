@@ -1923,41 +1923,42 @@ function world:draw()
  end
 
  -- do the actual drawing
- local bgl
+ local bgl=mlayer(sflags.mb)
  if not wrapping and self.carrion[self:screenkey()] then
-  bgl=mlayer(sflags.mb, sflags.sm, sflags.cn)
- else
-  bgl=mlayer(sflags.mb, sflags.sm)
+  bgl=mlayer(sflags.mb, sflags.cn)
  end
 
  local offset=self:offset()
 
+  -- draw background
+  drawmaps(bgl)
+
+  -- draw actors
+  for a in reverse(self.actors) do
+   a:draw()
+  end
+
+ camera()
  -- draw water
- for x=tb.l,tb.r do
-  for y=tb.t,tb.b do
-    local s=mget(x, y)
+ for wx=tb.l,tb.r do
+  for wy=tb.t,tb.b do
+    local s=mget(wx, wy)
     if fget(s,sflags.wm) then
-     x=x*8-offset.x
-     y=y*8-offset.y
-     spr(22, x,y)
-     y-=8
-     spr(6, x,y)
+     wx=wx*8-offset.x
+     wy=wy*8-offset.y
+     spr(22, wx,wy)
+     wy-=8
+     spr(6, wx,wy)
     end
   end
  end
 
- -- draw background
- drawmaps(bgl)
- -- draw actors
- for a in reverse(self.actors) do
-  a:draw()
- end
+ -- draw foreground
+ drawmaps(mlayer(sflags.mf, sflags.sm))
  -- draw particles
  for p in all(self.partgens) do
   p:draw(offset)
  end
- -- draw foreground
- drawmaps(mlayer(sflags.mf))
  camera()
 end
 
