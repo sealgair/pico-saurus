@@ -66,6 +66,15 @@ function reverse(t)
  end
 end
 
+-- swap keys & values of a table
+function invert(t)
+ local r = {}
+ for k,v in pairs(t) do
+  r[v]=k
+ end
+ return r
+end
+
 -- find key of table item (nil if not found)
 function find(t, item)
  for k,v in pairs(t) do
@@ -114,13 +123,9 @@ end
 xywh={x='w', y='h'}
 
 -- is color a darker than color b?
-darkorder={
+darkindex=invert({
  0,1,2,5,4,3,8,13,9,14,6,11,15,12,10,7
-}
-darkindex={}
-for k,v in pairs(darkorder) do
- darkindex[v]=k
-end
+})
 function darker(a, b)
  return darkindex[a]<darkindex[b]
 end
@@ -148,7 +153,7 @@ function isnight()
 end
 function mapnight()
  if isnight() then
-  for f,t in pairs(nightmap) do
+  for f, t in pairs(swaps) do
    pal(f, t)
   end
  end
@@ -230,20 +235,7 @@ sfx metadata:
 ]]
 --------------------------------
 
-notenames={
- c=0,
- cs=1,
- d=2,
- ds=3,
- e=4,
- f=5,
- fs=6,
- g=7,
- gs=8,
- a=9,
- as=10,
- b=11,
-}
+notenames=invert({'c', 'cs', 'd', 'ds', 'e', 'f', 'fs', 'g', 'gs', 'a', 'as', 'b'})
 
 function getmusic(m)
  local l=4
@@ -1170,7 +1162,7 @@ function player:munch(d)
 end
 
 function player:sprite()
- if self.health<=0 then
+ if gamestate==gs_gameover then
   return self.sprites.dead
  elseif self.sleeping then
   return self.sprites.sleep
@@ -1326,7 +1318,7 @@ end
 -- reset sleep counter if player gets hurt
 function player:hurt(d)
  actor.hurt(self, d, true)
- self.hurting=true
+ self.hurting=self.health>0
  self.sleepcount=0
  if self.sleeptime!=nil then
   self.sleeptime+=d*10
@@ -2115,16 +2107,14 @@ end
 
 function drawsplash()
  rectfill(0,0,127,127,12)
- palt(0, false)
- spr(224, 0,3, 13,2)
- spr(224, 104,3, 3,2, true)
+ palt(0,true)
+ spr(224, 0,3, 16,2)
  palt()
+
  print("mark knopfler's vicious lizard", 5, 24, 2)
  cursor(32, 44)
  color(7)
- print("hold c to jump")
- print("hold x to run or eat")
- print("crouch to sleep")
+ print("hold c to jump\nhold x to run or eat\ncrouch to sleep")
  if initqueued then
   color(14)
  else
@@ -2143,63 +2133,49 @@ end
 function drawgameover()
  local p=protagonist:middle()
  local o=world:offset()
- local l=2
+ local drawspeed=2
  p.x-=o.x
  p.y-=o.y-2
- local d=(1-min(gotime/l, 1))*127
+ local d=(1-min(gotime/drawspeed, 1))*127
 
  color(0)
+ -- black out screen
  rectfill(0,0,127,p.y-d)
  rectfill(0,p.y+d,127,127)
 
- camera(o.x, o.y)
- protagonist.hurtflash=0
+ camera(o.x,o.y)
  protagonist:draw()
  camera()
+
  if d<=0 then
-  d=(min(gotime/l-1, 1))*max(p.x, 127-p.x)
-  if d>8 then
-   clip(p.x-d, 0, d*2, 127)
-   line(0, p.y+1, 127, p.y+1, 8)
-   local tx=p.x+16
-   if p.x>64 then
-    tx-=64
-   end
-   print("game over", tx, p.y-4, 8)
-   clip()
-  else
-   line(p.x-d, p.y+1, p.x+d, p.y+1, 8)
+  -- draw red line
+  d=(min(gotime/drawspeed-1, 1))*max(p.x, 127-p.x)
+  clip(p.x-d, 0, d*2, 127)
+  line(0, p.y+1, 127, p.y+1, 8)
+  local tx=p.x+16
+  if p.x>64 then
+   tx-=64
   end
+  print("game over", tx, p.y-4, 8)
+  clip()
  end
 
- if gotime>l*2 then
-  if (protagonist.y-o.y<111) protagonist.y+=1
-  local score=protagonist.score
-  local txt={
-   "days survived: "..score.days,
-   "slept: "..flr(score.sleep),
-   "drank: "..flr(score.food*100),
-   "ate: "..flr(score.food*100),
-   " - "..score.critter.." mammals",
-   " - "..score.fish.." fish",
-   " - "..score.rahonavis.." rahonavii",
-  }
-  local f=(gotime-l*2)*10
-  local i=0
-  cursor(8,8)
-  color(4)
-  for row in all(txt) do
-   if i+#row<f then
-    print(row)
-    i+=#row
-   else
-    print(sub(row, 0, f-(i+#row)))
-    break
-   end
-  end
-  color(9)
-  print("\nx or z to restart")
- end
+ -- if gotime>drawspeed*2 then
+ --  if (protagonist.y-o.y<111) protagonist.y+=1
+ --  local score=protagonist.score
+ --  local txt="days survived: "..score.days..
+ --   "\nslept: "..flr(score.sleep)..
+ --   "\ndrank: "..flr(score.food*100)..
+ --   "\nate: "..flr(score.food*100)..
+ --   "\n - "..score.critter.." mammals"..
+ --   "\n - "..score.fish.." fish"..
+ --   "\n - "..score.rahonavis.." rahonavii"
+ --  local f=(gotime-drawspeed*2)*10
+ --  if (f>#txt) txt=txt.."\n\nx or z to restart"
+ --  cursor(8,8)
+ --  color(4)
+ --  print(sub(txt, 0, f-#txt))
+ -- end
 end
 
 function drawsleep()
@@ -2217,7 +2193,7 @@ end
 waterdt=0
 wateroff=1
 waterdist=0
-function move_water()
+function movewater()
  waterdt+=.25
  if waterdt>60 then
   waterdt=0
@@ -2251,7 +2227,7 @@ function _draw()
  if (gamestate==gs_gameover) drawgameover()
  if (gotime and gotime>0) return
  if (gamestate==gs_init) drawsplash(); return
- move_water()
+ movewater()
  world:draw({x=0, y=16})
  drawhud()
  if (gamestate==gs_sleep) drawsleep()
