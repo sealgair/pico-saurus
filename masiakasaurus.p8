@@ -17,16 +17,28 @@ gs_sleep=3
 
 gamestate=gs_init
 
+
+-- swap keys & values of a table
+function invert(t, initial)
+ local r = {}
+ i=initial or 1
+ for k in all(t) do
+  r[k]=i
+  i+=1
+ end
+ return r
+end
+
 -- sprite flags
-sflags={
- sm=0, -- solid map
- mf=1, -- map foreground
- mb=2, -- map background
- cn=3, -- carrion
- wm=4, -- water map tile
- fs=6, -- edible fish spawn
- cs=7, -- edible critter spawn
-}
+sflags=invert({
+ 'solid',
+ 'foreground',
+ 'background',
+ 'carrion',
+ 'water',
+ 'fish',
+ 'critter',
+}, 0)
 dt=1/60 --clock tick time
 g=9.8/dt -- gravity acceleration
 day=60 -- day length in seconds
@@ -64,15 +76,6 @@ function reverse(t)
   n-=1
   if (n>0) return t[n]
  end
-end
-
--- swap keys & values of a table
-function invert(t)
- local r = {}
- for k,v in pairs(t) do
-  r[v]=k
- end
- return r
 end
 
 -- find key of table item (nil if not found)
@@ -235,7 +238,7 @@ sfx metadata:
 ]]
 --------------------------------
 
-notenames=invert({'c', 'cs', 'd', 'ds', 'e', 'f', 'fs', 'g', 'gs', 'a', 'as', 'b'})
+notenames=invert({'c', 'cs', 'd', 'ds', 'e', 'f', 'fs', 'g', 'gs', 'a', 'as', 'b'}, 0)
 
 function getmusic(m)
  local l=4
@@ -761,10 +764,10 @@ function fish:splash()
 end
 
 function fish:touch(s)
- if fget(s, sflags.wm) then
+ if fget(s, sflags.water) then
   world:despawn(self)
   self:splash()
- elseif fget(s, sflags.sm) then
+ elseif fget(s, sflags.solid) then
   self.vel.x=0
  end
 end
@@ -980,7 +983,7 @@ function majungasaurus:init(...)
  for x=tb.l,tb.r do
   for y=tb.t,tb.b do
     local s=mget(x, y)
-    if fget(s,sflags.cn) then
+    if fget(s,sflags.carrion) then
      self.carrion+=x*8
      i+=1
     end
@@ -1193,7 +1196,7 @@ end
 -- is player standing on water
 function player:onwater()
  local m=self:mouth()
- return world:collides(m.x, m.y+1, 1, 1, sflags.wm)
+ return world:collides(m.x, m.y+1, 1, 1, sflags.water)
 end
 
 -- coords of my mouth
@@ -1279,7 +1282,7 @@ function player:move()
   if #self.food>0 then
    self.eating=true
    self:eat()
-  elseif world:carrionvisible() and world:collides(hb.x,hb.y,hb.w,hb.h, sflags.cn) then
+  elseif world:carrionvisible() and world:collides(hb.x,hb.y,hb.w,hb.h, sflags.carrion) then
    self.eating=true
    self.stats.food+=dt*.05
    self.stats.water+=dt*.025
@@ -1599,7 +1602,7 @@ function world:findspawns()
   for y=b.y, b.h+b.y do
    local spawninfo={x=x*self.pixels.w, y=y*self.pixels.h}
    local s=mget(x,y)
-   if fget(s,sflags.cs) then
+   if fget(s,sflags.critter) then
     if majungasaurus:spriteset()[s] then
      if self:carrionvisible() then
       spawninfo.type=majungasaurus
@@ -1612,7 +1615,7 @@ function world:findspawns()
      add(self.spawns.critters,
       critter(spawninfo.x, spawninfo.y))
     end
-   elseif fget(s,sflags.fs) then
+   elseif fget(s,sflags.fish) then
     add(self.spawns.fish, spawninfo)
    end
   end
@@ -1772,7 +1775,7 @@ end
 
 -- check for collisions in box
 function world:collides(x,y,w,h, flag)
- flag = flag or sflags.sm
+ flag = flag or sflags.solid
  local res = {}
  for nx=x,x+w-1 do
   for ny=y,min(y+h-1, 448) do --448 is the edge of the map
@@ -1923,27 +1926,27 @@ function world:draw()
  end
 
  -- do the actual drawing
- local bgl=mlayer(sflags.mb)
+ local bgl=mlayer(sflags.background)
  if not wrapping and self.carrion[self:screenkey()] then
-  bgl=mlayer(sflags.mb, sflags.cn)
+  bgl=mlayer(sflags.background, sflags.carrion)
  end
 
  local offset=self:offset()
 
-  -- draw background
-  drawmaps(bgl)
+ -- draw background
+ drawmaps(bgl)
 
-  -- draw actors
-  for a in reverse(self.actors) do
-   a:draw()
-  end
+ -- draw actors
+ for a in reverse(self.actors) do
+  a:draw()
+ end
 
  camera()
  -- draw water
  for wx=tb.l,tb.r do
   for wy=tb.t,tb.b do
     local s=mget(wx, wy)
-    if fget(s,sflags.wm) then
+    if fget(s,sflags.water) then
      wx=wx*8-offset.x
      wy=wy*8-offset.y
      spr(22, wx,wy)
@@ -1954,7 +1957,7 @@ function world:draw()
  end
 
  -- draw foreground
- drawmaps(mlayer(sflags.mf, sflags.sm))
+ drawmaps(mlayer(sflags.foreground, sflags.solid))
  -- draw particles
  for p in all(self.partgens) do
   p:draw(offset)
@@ -2161,6 +2164,7 @@ function drawgameover()
   clip()
  end
 
+ -- draw stats
  -- if gotime>drawspeed*2 then
  --  if (protagonist.y-o.y<111) protagonist.y+=1
  --  local score=protagonist.score
