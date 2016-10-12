@@ -2138,19 +2138,18 @@ function drawgameover()
    "\n - "..score.fish.." fish"..
    "\n - "..score.rahonavis.." rahonavii \n\n x or z to restart"
   local f=(gotime-drawspeed*2)*10
-  print(sub(txt, 0, f-#txt), 8,8, 4)
+  if (f<#txt) txt=sub(txt, 0, f-#txt)
+  print(txt, 8,8, 4)
  end
 end
 
 function drawsleep()
- local c=5
- if (isnight()) c=6
  local p=protagonist:middle()
  local o=world:offset()
  for i=0,2 do
   local x=p.x-6+i*4
   local y=p.y-10+sin((sleeptime+dt*4*i))*3
-  print("z", x-o.x, y-o.y, 10)
+  print("z", x-o.x, y-o.y, 9)
  end
 end
 
