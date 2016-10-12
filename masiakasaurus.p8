@@ -156,7 +156,7 @@ function isnight()
 end
 function mapnight()
  if isnight() then
-  for f, t in pairs(swaps) do
+  for f, t in pairs(nightmap) do
    pal(f, t)
   end
  end
@@ -1927,7 +1927,7 @@ function world:draw()
 
  -- do the actual drawing
  local bgl=mlayer(sflags.background)
- if not wrapping and self.carrion[self:screenkey()] then
+ if self.carrion[self:screenkey()] then
   bgl=mlayer(sflags.background, sflags.carrion)
  end
 
