@@ -2078,7 +2078,7 @@ end
 
 function drawsplash()
  rectfill(0,0,127,127,12)
- palt(0,true)
+ palt(0,false)
  spr(224, 0,3, 16,2)
  palt()
 
@@ -2491,4 +2491,3 @@ __music__
 00 41424344
 00 41424344
 00 41424344
-
