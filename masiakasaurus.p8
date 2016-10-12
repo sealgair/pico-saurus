@@ -135,22 +135,25 @@ end
 
 -- color mappings for nighttime
 nightmap={
- [1]=0,
- [2]=1,
- [3]=1,
- [4]=5,
- [5]=0,
- [6]=5,
- [7]=6,
- [8]=4,
- [9]=4,
- [10]=9,
- [11]=3,
- [12]=13,
- [13]=2,
- [14]=8,
- [15]=4,
+ 0,1,1,5,0,5,6,4,4,9,3,13,2,8,4,
 }
+-- nightmap={
+--  [1]=0,
+--  [2]=1,
+--  [3]=1,
+--  [4]=5,
+--  [5]=0,
+--  [6]=5,
+--  [7]=6,
+--  [8]=4,
+--  [9]=4,
+--  [10]=9,
+--  [11]=3,
+--  [12]=13,
+--  [13]=2,
+--  [14]=8,
+--  [15]=4,
+-- }
 function isnight()
  return daytime>day-twilight/2 and daytime<day*2-twilight/2
 end
@@ -1943,8 +1946,8 @@ function world:draw()
 
  camera()
  -- draw water
- for wx=tb.l,tb.r do
-  for wy=tb.t,tb.b do
+ for wx=tb.l,tb.r-1 do
+  for wy=tb.t,tb.b-1 do
     local s=mget(wx, wy)
     if fget(s,sflags.water) then
      wx=wx*8-offset.x
