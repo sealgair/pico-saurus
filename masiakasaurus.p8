@@ -5,46 +5,6 @@ __lua__
 -- by chase caster
 -- special thanks: scott d. sampson & mark knopfler
 
--- debug settings
-showstats=false
-
--- game states:
-gs_gameover=-1
-gs_init=0
-gs_play=1
-gs_slide=2
-gs_sleep=3
-
-gamestate=gs_init
-
-
--- swap keys & values of a table
-function invert(t, initial)
- local r = {}
- i=initial or 1
- for k in all(t) do
-  r[k]=i
-  i+=1
- end
- return r
-end
-
--- sprite flags
-sflags=invert({
- 'solid',
- 'foreground',
- 'background',
- 'carrion',
- 'water',
- 'fish',
- 'critter',
-}, 0)
-dt=1/60 --clock tick time
-g=9.8/dt -- gravity acceleration
-day=60 -- day length in seconds
-twilight=6 -- twilight length
-maxnum=32767.99
-
 --------------------------------
 -- utilities
 --------------------------------
@@ -78,6 +38,17 @@ function reverse(t)
  end
 end
 
+-- swap keys & values of a table
+function invert(t, initial)
+ local r={}
+ i=initial or 1
+ for k in all(t) do
+  r[k]=i
+  i+=1
+ end
+ return r
+end
+
 -- find key of table item (nil if not found)
 function find(t, item)
  for k,v in pairs(t) do
@@ -99,69 +70,35 @@ end
 -- convert sprite flags to a map layer
 function mlayer(...)
  l = 0
- for f in all({...}) do
+ for f in all{...} do
   l+=2^f
  end
  return l
 end
 
--- function log(...)
---  for l in all{...} do
---   printh(l, "log.txt")
---  end
--- end
-
--- function drawstats()
---  if showstats then
---   rectfill(0,120, 127,127, 5)
---   local m="#"..flr(stat(0))
---   m=m.."\t%"..flr(stat(1)*100)
---   m=m.."\ta:"..#world.actors
---   m=m.."\tvx:"..flr(protagonist.vel.x)
---   print(m, 2,122, 10)
---  end
--- end
-
 -- useful for iterating between x/y & w/h
 xywh={x='w', y='h'}
 
 -- is color a darker than color b?
-darkindex=invert({
+darkindex=invert{
  0,1,2,5,4,3,8,13,9,14,6,11,15,12,10,7
-})
+}
 function darker(a, b)
  return darkindex[a]<darkindex[b]
 end
 
--- color mappings for nighttime
-nightmap={
- 0,1,1,5,0,5,6,4,4,9,3,13,2,8,4,
-}
--- nightmap={
---  [1]=0,
---  [2]=1,
---  [3]=1,
---  [4]=5,
---  [5]=0,
---  [6]=5,
---  [7]=6,
---  [8]=4,
---  [9]=4,
---  [10]=9,
---  [11]=3,
---  [12]=13,
---  [13]=2,
---  [14]=8,
---  [15]=4,
--- }
 function isnight()
  return daytime>day-twilight/2 and daytime<day*2-twilight/2
 end
+
+-- color mappings for nighttime
+nightmap={
+ 0,1,1,5,0,5,6,4,4,9,3,13,2,8,4
+}
 function mapnight()
- if isnight() then
-  for f, t in pairs(nightmap) do
-   pal(f, t)
-  end
+ if (not isnight()) return
+ for f, t in pairs(nightmap) do
+  pal(f, t)
  end
 end
 
@@ -177,14 +114,13 @@ function wrap(val, max, min)
  return val
 end
 
--- concatenate two list-like tables
-function concat(a, b)
+-- concatenate multiple list-like tables
+function concat(...)
  local r={}
- for v in all(a) do
-  add(r, v)
- end
- for v in all(b) do
-  add(r, v)
+ for l in all{...} do
+  for v in all(l) do
+   add(r, v)
+  end
  end
  return r
 end
@@ -203,6 +139,36 @@ end
 function sign(x)
  return x/abs(x)
 end
+
+
+--------------------------------
+-- constants
+--------------------------------
+
+-- game states
+gs_gameover=-1
+gs_init=0
+gs_play=1
+gs_slide=2
+gs_sleep=3
+
+gamestate=gs_init
+
+-- sprite flags
+sflags=invert({
+ 'solid',
+ 'foreground',
+ 'background',
+ 'carrion',
+ 'water',
+ 'fish',
+ 'critter',
+}, 0)
+dt=1/60 --clock tick time
+g=9.8/dt -- gravity acceleration
+day=60 -- day length in seconds
+twilight=6 -- twilight length
+maxnum=32767.99
 
 --------------------------------
 -- music
@@ -241,7 +207,9 @@ sfx metadata:
 ]]
 --------------------------------
 
-notenames=invert({'c', 'cs', 'd', 'ds', 'e', 'f', 'fs', 'g', 'gs', 'a', 'as', 'b'}, 0)
+notenames=invert({
+ 'c', 'cs', 'd', 'ds', 'e', 'f', 'fs', 'g', 'gs', 'a', 'as', 'b'
+}, 0)
 
 function getmusic(m)
  local l=4
@@ -259,13 +227,15 @@ function getmusicsounds(m, skip_cache)
  if (musicsoundscache[m]!=nil) return musicsoundscache[m]
 
  local music=getmusic(m)
- if (sounds==nil) sounds={}
+ -- sounds=sounds or {}
+ -- if (sounds==nil) sounds={}
+ local sounds={}
  for i=0,3 do
   local s=band(peek(music.b+i),127)
   if (s!=0x42) add(sounds, s)
  end
  if not music.loopback and not music.stop then
-  sounds = concat(a, getmusicsounds(m+1), true)
+  sounds=concat(a, getmusicsounds(m+1))
  end
  if (not skip_cache) musicsoundscache[m]=sounds
  return sounds
@@ -275,14 +245,14 @@ end
 -- function setmusic(m, args)
 -- end
 
-function getsound(s)
- local l=68
- local b=0x3200+s*l
- return {
-  speed=peek(b+65),
-  --todo: loop start / end
- }
-end
+-- function getsound(s)
+--  local l=68
+--  local b=0x3200+s*l
+--  return {
+--   speed=peek(b+65),
+--   --todo: loop start / end
+--  }
+-- end
 
 function setsound(s, args)
  local l=68
@@ -444,7 +414,7 @@ end
 -- particles
 --------------------------------
 
-partgen = class()
+partgen=class()
 
 function partgen:init(args)
  -- required args
@@ -569,9 +539,9 @@ end
 
 function actor:move()
  --accelerate
- self.vel.x += self.acc.x*dt
- self.vel.y += self.acc.y*dt
- self.vel.y += g*dt
+ self.vel.x+=self.acc.x*dt
+ self.vel.y+=self.acc.y*dt
+ self.vel.y+=g*dt
 
  --upgade walking sprite position
  if self.vel.x==0 then
@@ -584,7 +554,6 @@ function actor:move()
  end
 
  --update coords
- local dims={x='w', y='h'}
  function trymove(axis)
   -- check for collisions along an axis of movement,
   --  pushing the actor away from the collider if
@@ -594,9 +563,9 @@ function actor:move()
   local dist=self.vel[axis]*dt
   if (dist==0) return -- didn't move
   -- figure out axis & dimension names
-  local dim=dims[axis]
+  local dim=xywh[axis]
   local opaxis=({x='y', y='x'})[axis]
-  local opdim=dims[opaxis]
+  local opdim=xywh[opaxis]
 
   -- build master hit detection box
   --  (1 pixel wide slice just in advance of the hitbox)
@@ -940,7 +909,7 @@ function rahonavis:move()
     self.x=actor.x
     actor:munch(dt)
     if actor.health<=0 then
-     self.direction=rndchoice({1,-1})
+     self.direction=rndchoice{1,-1}
     end
     break
    end
@@ -1021,7 +990,7 @@ function majungasaurus:think()
   end
  else
   local hb=self:hitbox()
-  if hb:contains({x=self.carrion,y=self.y+1}) then
+  if hb:contains{x=self.carrion,y=self.y+1} then
    self.vel.x=0
    self.eating=true
   else
@@ -1854,22 +1823,22 @@ function world:translate(d)
 end
 
 function world:drawsky()
- local cs={12,13,2,1,0}
- local cn=#cs-2
+ local starcolors={12,13,2,1,0}
+ local cn=#starcolors-2
  local ci=1
  if daytime>day then
   if daytime>=day*2-twilight then
    ci+=flr((day*2-daytime)*cn/twilight)
   else
-   ci=#cs
+   ci=#starcolors
   end
  elseif daytime>=day-twilight then
   ci+=cn-flr((day-daytime)*cn/twilight)
  end
- rectfill(0,0,127,127,cs[ci])
+ rectfill(0,0,127,127,starcolors[ci])
  if ci>1 then
   for s in all(self.stars) do
-   if darker(cs[ci], s.c) then
+   if darker(starcolors[ci], s.c) then
     pset(s.x, s.y, s.c)
    end
   end
@@ -1953,8 +1922,7 @@ function world:draw()
      wx=wx*8-offset.x
      wy=wy*8-offset.y
      spr(22, wx,wy)
-     wy-=8
-     spr(6, wx,wy)
+     spr(6, wx,wy-8)
     end
   end
  end
@@ -2009,13 +1977,9 @@ end
 function drawhud()
  mapnight()
  rectfill(0,0,127,15,0)
- --heart
  drawahud(13,8, 0,0, 'health')
- --stomach
  drawahud(29,13, 0,8, 'food')
- --water
  drawahud(45,12, 64,0, 'water')
- --sleep
  drawahud(61,7, 64,8, 'sleep')
  pal()
 end
@@ -2119,15 +2083,10 @@ function drawsplash()
  palt()
 
  print("mark knopfler's vicious lizard", 5, 24, 2)
- cursor(32, 44)
- color(7)
- print("hold c to jump\nhold x to run or eat\ncrouch to sleep")
- if initqueued then
-  color(14)
- else
-  color(1)
- end
- print("\nx or c to start")
+ print("hold c to jump\nhold x to run or eat\ncrouch to sleep", 32,44, 7)
+ c=1
+ if (initqueued) c=14
+ print("x or c to start", 32,68, c)
 
  for x=0,120,8 do
   spr(1, x, 120)
@@ -2145,8 +2104,8 @@ function drawgameover()
  p.y-=o.y-2
  local d=(1-min(gotime/drawspeed, 1))*127
 
- color(0)
  -- black out screen
+ color(0)
  rectfill(0,0,127,p.y-d)
  rectfill(0,p.y+d,127,127)
 
@@ -2168,22 +2127,19 @@ function drawgameover()
  end
 
  -- draw stats
- -- if gotime>drawspeed*2 then
- --  if (protagonist.y-o.y<111) protagonist.y+=1
- --  local score=protagonist.score
- --  local txt="days survived: "..score.days..
- --   "\nslept: "..flr(score.sleep)..
- --   "\ndrank: "..flr(score.food*100)..
- --   "\nate: "..flr(score.food*100)..
- --   "\n - "..score.critter.." mammals"..
- --   "\n - "..score.fish.." fish"..
- --   "\n - "..score.rahonavis.." rahonavii"
- --  local f=(gotime-drawspeed*2)*10
- --  if (f>#txt) txt=txt.."\n\nx or z to restart"
- --  cursor(8,8)
- --  color(4)
- --  print(sub(txt, 0, f-#txt))
- -- end
+ if gotime>drawspeed*2 then
+  if (protagonist.y-o.y<111) protagonist.y+=1
+  local score=protagonist.score
+  local txt="days survived: "..score.days..
+   "\nslept: "..flr(score.sleep)..
+   "\ndrank: "..flr(score.food*100)..
+   "\nate: "..flr(score.food*100)..
+   "\n - "..score.critter.." mammals"..
+   "\n - "..score.fish.." fish"..
+   "\n - "..score.rahonavis.." rahonavii \n\n x or z to restart"
+  local f=(gotime-drawspeed*2)*10
+  print(sub(txt, 0, f-#txt), 8,8, 4)
+ end
 end
 
 function drawsleep()
@@ -2236,7 +2192,7 @@ function _draw()
  if (gotime and gotime>0) return
  if (gamestate==gs_init) drawsplash(); return
  movewater()
- world:draw({x=0, y=16})
+ world:draw{x=0, y=16}
  drawhud()
  if (gamestate==gs_sleep) drawsleep()
 end
