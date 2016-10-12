@@ -2164,7 +2164,7 @@ function movewater()
   waterdt=0
   wateroff*=-1
  end
- waterdist+=(-sin(waterdt/120))*.25
+ waterdist+=(-sin(waterdt/120))*.15
  if (waterdist<1) return
 
  for tile in all{6,22} do
@@ -2492,4 +2492,3 @@ __music__
 00 41424344
 00 41424344
 00 41424344
-
