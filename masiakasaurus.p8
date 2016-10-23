@@ -140,7 +140,6 @@ function sign(x)
  return x/abs(x)
 end
 
-
 --------------------------------
 -- constants
 --------------------------------
@@ -2086,10 +2085,10 @@ function drawsplash()
  palt()
 
  print("mark knopfler's vicious lizard", 5, 24, 2)
- print("hold c to jump\nhold x to run or eat\ncrouch to sleep", 32,44, 7)
+ print("hold a to jump\nhold b to run or eat\ncrouch to sleep", 28,44, 7)
  c=1
  if (initqueued) c=14
- print("x or c to start", 32,68, c)
+ print("press a button to start", 24,68, c)
 
  for x=0,120,8 do
   spr(1, x, 120)
@@ -2139,7 +2138,7 @@ function drawgameover()
    "\nate: "..flr(score.food*100)..
    "\n - "..score.critter.." mammals"..
    "\n - "..score.fish.." fish"..
-   "\n - "..score.rahonavis.." rahonavii \n\n x or z to restart"
+   "\n - "..score.rahonavis.." rahonavii \n\n press a button to restart"
   local f=(gotime-drawspeed*2)*10
   if (f<#txt) txt=sub(txt, 0, f-#txt)
   print(txt, 8,8, 4)
