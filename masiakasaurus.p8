@@ -1879,7 +1879,6 @@ function world:draw()
  end
 
  function drawmaps(layer)
-  mapnight()
   camera(pb.x-self.o.x, pb.y-self.o.y)
   map(
    tb.x,tb.y,
@@ -1899,6 +1898,7 @@ function world:draw()
  end
 
  -- do the actual drawing
+ mapnight()
  local bgl=mlayer(sflags.background)
  if self.carrion[self:screenkey()] then
   bgl=mlayer(sflags.background, sflags.carrion)
@@ -1915,6 +1915,7 @@ function world:draw()
  end
 
  camera()
+ mapnight()
  -- draw water
  for wx=tb.l,tb.r-1 do
   for wy=tb.t,tb.b-1 do
@@ -1929,7 +1930,9 @@ function world:draw()
  end
 
  -- draw foreground
+ mapnight()
  drawmaps(mlayer(sflags.foreground, sflags.solid))
+
  -- draw particles
  for p in all(self.partgens) do
   p:draw(offset)
@@ -2195,6 +2198,7 @@ function _draw()
  drawhud()
  if (gamestate==gs_sleep) drawsleep()
 end
+
 __gfx__
 70000007b3bb3bbb000000006363366366666665000000000000000011121111bb3b1bb3b3bb3bbb116555510bb0bbb00333033055ee2ee55555555555555555
 070000703b33b3b3000000003633623566666255000000000000000011111151bbb2b3213b33b3b311161511b00b0000000030035e70e07e5ec55ec55ec55555
