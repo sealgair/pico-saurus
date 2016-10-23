@@ -1,2 +1,3 @@
 *.p8.png
 log.txt
+.DS_Store
