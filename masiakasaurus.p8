@@ -2085,7 +2085,7 @@ function drawsplash()
  palt()
 
  print("mark knopfler's vicious lizard", 5, 24, 2)
- print("hold a to jump\nhold b to run or eat\ncrouch to sleep", 28,44, 7)
+ print("hold a to jump\nhold b to run or eat\nhold down to sleep", 28,44, 7)
  c=1
  if (initqueued) c=14
  print("press a button to start", 24,68, c)
