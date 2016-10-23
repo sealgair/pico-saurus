@@ -1839,7 +1839,7 @@ function world:drawsky()
  rectfill(0,0,127,127,starcolors[ci])
  if ci>1 then
   for s in all(self.stars) do
-   if darker(starcolors[ci], s.c) and rnd()>0.01 then
+   if darker(starcolors[ci], s.c) and rnd()>0.02 then
     pset(s.x, s.y, s.c)
    end
   end
