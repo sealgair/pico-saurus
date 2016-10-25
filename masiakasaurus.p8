@@ -1085,7 +1085,7 @@ player = actor.subclass{
  __name="player",
  run={a=600, m=80},
  jump=100,
- btn={j=4,l=0,r=1,c=3,e=5,s=5},
+ btn={j=5,l=0,r=1,c=3,e=4,s=4},
  jd=dt*4, --0-1 in 1/4 seconds
  w=2,
  sprites={
@@ -2085,10 +2085,10 @@ function drawsplash()
  palt()
 
  print("mark knopfler's vicious lizard", 5, 24, 2)
- print("hold a to jump\nhold b to run or eat\nhold down to sleep", 28,44, 7)
+ print("hold [x] to jump\nhold [o] to run or eat\nhold [down] to sleep", 28,44, 7)
  c=1
  if (initqueued) c=14
- print("press a button to start", 24,68, c)
+ print("press any button to start", 24,68, c)
 
  for x=0,120,8 do
   spr(1, x, 120)
