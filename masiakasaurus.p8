@@ -1233,13 +1233,11 @@ function player:move()
   end
  end
 
- if (not self.crouched) self.sleepcount=0
-
  -- drink/eat
  self.eating=false
  self.drinking=false
  local hb=self:hitbox()
- if self.grounded and btn(self.btn.e) then
+ if self.grounded and (btn(self.btn.e) or btn(self.btn.c)) then
   if #self.food>0 then
    self.eating=true
    self:eat()
@@ -1252,8 +1250,13 @@ function player:move()
    self:drink()
   end
  end
- if (self.eating or self.drinking) self.vel.x=0 self.acc.x=0
+ if self.eating or self.drinking then
+  self.vel.x=0
+  self.acc.x=0
+  self.crouched=false
+ end
  if (not self.eating) self.es=1 self.esd=0
+ if (not self.crouched) self.sleepcount=0
 
  self:eatparticles()
  if self.drinking and not self.drinkparts then
