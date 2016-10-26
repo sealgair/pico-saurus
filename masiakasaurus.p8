@@ -1116,7 +1116,7 @@ function player:init(...)
   health=1,
   food=.8,
   water=.9,
-  sleep=1,
+  sleep=0.5,
  }
  self.btndelay={}
  self.score={
@@ -1142,7 +1142,7 @@ function player:sprite()
  elseif self.sleeping then
   return self.sprites.sleep
  elseif self.crouched then
-  if self.sleepcount and self.sleepcount>1.2 then
+  if self.sleepcount and self.sleepcount>0.1 then
    return self.sprites.sleep
   else
    return self.sprites.crouch
@@ -1196,7 +1196,10 @@ end
 
 function player:move()
  self.hurting=false --until proved otherwise
- if self.sleeping then return end
+ if self.sleeptime then
+  if (band(btnp(), 0xf7) != 0) self.sleeptime+=5
+  return
+ end
  local slpadj=bound(self.stats.sleep*2, 1, 0.3)
 
  local run=self.run.m*slpadj
@@ -1222,9 +1225,9 @@ function player:move()
  if self.crouched then
   if self.sleepcount==nil then
    self.sleepcount=0
-  elseif not self:onwater() then
+  elseif not self:onwater() and self.grounded then
    self.sleepcount+=dt
-   if self.sleepcount>3 then
+   if self.sleepcount>0.6 then
     self.sleepcount=nil
     self.sleeping=true
    end
@@ -1295,9 +1298,6 @@ function player:hurt(d)
  actor.hurt(self, d, true)
  self.hurting=self.health>0
  self.sleepcount=0
- if self.sleeptime!=nil then
-  self.sleeptime+=d*10
- end
 end
 
 function player:draw()
@@ -1410,8 +1410,7 @@ function player:snooze(dt)
 
  -- check whether we woke up
  if (self.stats.sleep>=1
-   or self.sleeptime>day*2/3
-   or daytime<(day/60)) then
+   or self.sleeptime>50) then
   self.sleeptime=nil
   self.sleeping=false
   return true
