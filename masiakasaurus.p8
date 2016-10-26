@@ -1116,7 +1116,7 @@ function player:init(...)
   health=1,
   food=.8,
   water=.9,
-  sleep=0.5,
+  sleep=1,
  }
  self.btndelay={}
  self.score={
@@ -2481,4 +2481,3 @@ __music__
 00 41424344
 00 41424344
 00 41424344
-
