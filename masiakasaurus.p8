@@ -1180,20 +1180,6 @@ function player:mouth()
  return c
 end
 
--- delayed button detection
-function player:dbtn(b)
- local d=bound(.33-self.stats.sleep, 0.33, 0)*1.5
- local r=false
- if (self.btndelay[b]==nil) self.btndelay[b]=0
- if btn(b) then
-  r=self.btndelay[b]>=d
-  self.btndelay[b]+=dt
- else
-  self.btndelay[b]=0
- end
- return r
-end
-
 function player:move()
  self.hurting=false --until proved otherwise
  if self.sleeptime then
@@ -1214,7 +1200,7 @@ function player:move()
  elseif btn(self.btn.r) then
   self.flipped=false
  end
- if self:dbtn(self.btn.j) and self.grounded then
+ if btn(self.btn.j) and self.grounded then
   self.j=min(self.j+self.jd,1)
  elseif self.j>0 then
   self.vel.y-=jump*(1+self.j)
@@ -1233,10 +1219,10 @@ function player:move()
    end
   end
   self.vel.x=0
- elseif self:dbtn(self.btn.l) and self.j<=0 then
+ elseif btn(self.btn.l) and self.j<=0 then
   self.vel.x-=self.run.a*dt
   self.vel.x=max(self.vel.x,-run)
- elseif self:dbtn(self.btn.r) and self.j<=0 then
+ elseif btn(self.btn.r) and self.j<=0 then
   self.vel.x+=self.run.a*dt
   self.vel.x=min(self.vel.x,run)
  elseif self.vel.x!=0 then
@@ -1253,7 +1239,7 @@ function player:move()
  self.eating=false
  self.drinking=false
  local hb=self:hitbox()
- if self.grounded and self:dbtn(self.btn.e) then
+ if self.grounded and btn(self.btn.e) then
   if #self.food>0 then
    self.eating=true
    self:eat()
