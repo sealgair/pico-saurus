@@ -1245,6 +1245,7 @@ function player:move()
    self.stats.water+=dt*.025
   elseif self:onwater() and abs(self.vel.x)<dt then
    self.drinking=true
+   self:drink()
   end
  end
  if self.eating or self.drinking then
@@ -1333,6 +1334,10 @@ function player:age(dt)
  end
 end
 
+function player:drink()
+ self.stats.water += dt/6
+end
+
 function player:totalscore()
  local scoremods={
   days=50,
@@ -1350,6 +1355,8 @@ end
 function player:eat()
  local f=self.food[1]
  local a=f:munch(8*dt)/100
+ self.stats.food+=a
+ self.stats.water+=a/2
  self.stats.health+=a/8
  f.x=self:mouth().x-f.w*4
  f.y=self.y
