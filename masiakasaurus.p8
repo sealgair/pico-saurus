@@ -1121,9 +1121,6 @@ function player:init(...)
  }
  self.btndelay={}
  self.score={
-  food=0,
-  water=0,
-  sleep=0,
   critter=0,
   rahonavis=0,
   fish=0,
@@ -1337,20 +1334,23 @@ function player:age(dt)
  end
 end
 
-function player:addstat(key, val)
- self.stats[key]+=val
- self.score[key]+=val
-end
-
-function player:drink()
- self:addstat('water', dt/6)
+function player:totalscore()
+ local scoremods={
+  days=50,
+  rahonavis=10,
+  critter=2,
+  fish=6,
+ }
+ local score=0
+ for k, v in pairs(self.score) do
+  score+=v*(scoremods[k] or 1)
+ end
+ return flr(score)
 end
 
 function player:eat()
  local f=self.food[1]
  local a=f:munch(8*dt)/100
- self:addstat('food', a)
- self:addstat('water', a/2)
  self.stats.health+=a/8
  f.x=self:mouth().x-f.w*4
  f.y=self.y
@@ -1382,7 +1382,6 @@ function player:snooze(dt)
  else
   self.sleeptime+=dt
  end
- self.score.sleep+=dt
 
  local d=(1/day)*dt
  self.stats.water-=d/6
@@ -1967,13 +1966,15 @@ function drawahud(s, bc, x,y, k)
 end
 
 function drawhud()
- mapnight()
  rectfill(0,0,127,15,0)
  drawahud(13,8, 0,0, 'health')
  drawahud(29,13, 0,8, 'food')
  drawahud(45,12, 64,0, 'water')
  drawahud(61,7, 64,8, 'sleep')
- pal()
+ local s=protagonist:totalscore()..""
+ local l=flr((#s*4+1)/2)
+ rectfill(64-l,16, 64+l,21, 5)
+ print(s, 64-l+1, 16, 10)
 end
 
 --------------------------------
@@ -2106,7 +2107,7 @@ function drawgameover()
 
  if d<=0 then
   -- draw red line
-  d=(min(gotime/drawspeed-1, 1))*max(p.x, 127-p.x)
+  d=(min(gotime/drawspeed-1, 1))*max(p.x, 126-p.x)
   clip(p.x-d, 0, d*2, 127)
   line(0, p.y+1, 127, p.y+1, 8)
   local tx=p.x+16
@@ -2119,18 +2120,17 @@ function drawgameover()
 
  -- draw stats
  if gotime>drawspeed*2 then
+  print("press any button to restart", 8,8, 2)
   if (protagonist.y-o.y<111) protagonist.y+=1
   local score=protagonist.score
   local txt="days survived: "..score.days..
-   "\nslept: "..flr(score.sleep)..
-   "\ndrank: "..flr(score.food*100)..
-   "\nate: "..flr(score.food*100)..
-   "\n - "..score.critter.." mammals"..
+   "\nate: \n - "..score.critter.." mammals"..
    "\n - "..score.fish.." fish"..
-   "\n - "..score.rahonavis.." rahonavii \n\n press a button to restart"
+   "\n - "..score.rahonavis.." rahonavii"..
+   "\ntotal score: "..protagonist:totalscore()
   local f=(gotime-drawspeed*2)*10
   if (f<#txt) txt=sub(txt, 0, f-#txt)
-  print(txt, 8,8, 4)
+  print(txt, 8,20, 4)
  end
 end
 
@@ -2300,10 +2300,10 @@ c300000063c30000000000006300a380a0b3b3a2b34040a2b3b3b3b3b340404040404030b3b3b3b3
 c3000000c3c3e4b0e4c0b0e4c3000080a1b392303040403030b392b3b3928181404040403092b392b3303030a1b392b3b3b3a2b3b3a1a1b3b3b3a29200c7d711
 11100000111111111111111111111111111111110000000011111111111111111111111111111111111111111100002110101010101010103120202020219010
 01000000010101010101010180101010303030404040404040303030303081814040404040303030304040403030303030303030303030303030301111111111
-cc10cccccccccccccccccccccc282282cc282cc22228222228282c282cc22c282cc222282c28228228822822822822882c222282cccccccccccccccccccccccc
-ccdccdcccccccccccccccccccc2882882c282c288882888882282c282c2882282c288882cc28228822822888282882282288882cccccccccccccccccccdccdcc
-dccdccdccdcccccccccccccccc2882882c288288222c28822c28822822882c288288222ccc2882282282288228228228288222ccccccccccccccccdccdccdccd
-cdcdddddddddccccccccccccc288888822888228882cc282c28882288282c2888228882cc28882282288228228228228828882ccccccccccccccdddddddddcdc
+cccccccccccccccccccccccccc282282cc282cc22228222228282c282cc22c282cc222282c28228228822822822822882c222282cccccccccccccccccccccccc
+cccccccccccccccccccccccccc2882882c282c288882888882282c282c2882282c288882cc28228822822888282882282288882ccccccccccccccccccccccccc
+cccccccdddcccccccccccccccc2882882c288288222c28822c28822822882c288288222ccc2882282282288228228228288222ccccccccccccccccdddccccccc
+cccdddddddddccccccccccccc288888822888228882cc282c28882288282c2888228882cc28882282288228228228228828882ccccccccccccccdddddddddccc
 cddddd11b35dddccccccccccc2828828828282c22882c282c28282c2882cc28282c22882c28282282c28228882c282c28222882cccccccccccddd53b11dddddc
 ddd1ddd5b3b5dddccccccccc288228288288882222882288228888228282c28888222288288888282288228282c2822882222882cccccccccddd5b3b5ddd1ddd
 dddd1ddd555ddddddccccccc282cc2c282822828888228888282282882882282282888822822282888882282282288882288882ccccccccdddddd555ddd1dddd
