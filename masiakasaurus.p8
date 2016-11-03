@@ -2075,10 +2075,10 @@ function drawsplash()
  palt()
 
  print("mark knopfler's vicious lizard", 5, 24, 2)
- print("hold [x] to jump\nhold [o] to run or eat\nhold [down] to sleep", 28,44, 7)
+ print("hold [x] to jump\nhold [o] to run or eat\nhold [down] to sleep", 20,44, 7)
  c=1
  if (initqueued) c=14
- print("press any button to start", 24,68, c)
+ print("press any button to start", 16,68, c)
 
  for x=0,120,8 do
   spr(1, x, 120)
@@ -2482,4 +2482,3 @@ __music__
 00 41424344
 00 41424344
 00 41424344
-
