@@ -1274,7 +1274,7 @@ function player:move()
   if not self:overlaps(f) then
    f.pinned=false
    del(self.food, f)
-  elseif self.vel.y>0 or self.vel.x+self.vel.y==0 then
+  elseif not self.grounded and self.vel.y>0 or self.vel.x+self.vel.y==0 then
    f.y=self.y f.x=self:mouth().x-4
   end
  end
@@ -2489,4 +2489,3 @@ __music__
 00 41424344
 00 41424344
 00 41424344
-
