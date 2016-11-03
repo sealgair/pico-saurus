@@ -1245,7 +1245,6 @@ function player:move()
    self.stats.water+=dt*.025
   elseif self:onwater() and abs(self.vel.x)<dt then
    self.drinking=true
-   self:drink()
   end
  end
  if self.eating or self.drinking then
