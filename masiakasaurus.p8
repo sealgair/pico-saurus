@@ -1973,8 +1973,8 @@ function drawhud()
  drawahud(61,7, 64,8, 'sleep')
  local s=protagonist:totalscore()..""
  local l=flr((#s*4+1)/2)
- rectfill(64-l,16, 64+l,21, 5)
- print(s, 64-l+1, 16, 10)
+ rectfill(64-l,16, 64+l,22, 5)
+ print(s, 64-l+1, 17, 10)
 end
 
 --------------------------------
