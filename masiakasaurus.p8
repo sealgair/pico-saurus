@@ -737,7 +737,7 @@ end
 
 function fish:touch(s)
  if fget(s, sflags.water) then
-  world:despawn(self)
+  world:despawn(self, true)
   self:splash()
  elseif fget(s, sflags.solid) then
   self.vel.x=0
@@ -1504,9 +1504,9 @@ function world:spawn(actor)
 end
 
 -- remove an actor from the world
-function world:despawn(actor)
+function world:despawn(actor, safe_despawn)
  if find(self.actors, actor)!=nil then
-  if actor.critter then
+  if not safe_despawn and actor.critter then
    local s=self:screenkey()
    self.critterpop[s]=max(self.critterpop[s]-1, 0)
   end
