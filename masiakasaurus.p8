@@ -1719,7 +1719,9 @@ end
 function world:morning()
  protagonist.score.days+=1
  for s,p in pairs(self.critterpop) do
-  self.critterpop[s]=min(p+(.7/protagonist.score.days), 3)
+  if rnd()<1.75/protagonist.score.days then
+   self.critterpop[s]=min(p+1, 3)
+  end
  end
  -- reset whether any tile has carrion
  self.carrion={}
@@ -1727,11 +1729,6 @@ end
 
 -- player has gone to sleep
 function world:startsleep()
- for a in all(self.actors) do
-  if a!=protagonist then
-   del(self.actors, a)
-  end
- end
  for pg in all(self.partgens) do
   pg:stop()
  end
