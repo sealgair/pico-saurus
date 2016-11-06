@@ -1593,8 +1593,7 @@ end
 function world:spawn_critters()
  -- choose from available based on population
  local s=self:screenkey()
- local cn=3--#self.spawns.critters
- if self.critterpop[s]==nil or self.critterpop[s]>cn then
+ if self.critterpop[s]==nil or self.critterpop[s]>3 then
   self.critterpop[s]=3
  end
  for i=1,self.critterpop[s] do
@@ -1608,17 +1607,16 @@ function world:spawn_critters()
 end
 
 function world:spawn_danger()
- if self.critterpop[self:screenkey()]>0 then
-  local c=rndchoice(self.spawns.danger)
+ local c
+ if #self.actors-2<self.critterpop[self:screenkey()] then
+  c=rndchoice(self.spawns.danger)
   if c then
    self:spawn(c.type(c.x, c.y))
   end
  end
- if #self.spawns.apex>0 then
-  c=rndchoice(self.spawns.apex)
-  if not self:hasapex(c.type) then
-   self:spawn(c.type(c.x, c.y))
-  end
+ c=rndchoice(self.spawns.apex)
+ if c and not self:hasapex(c.type) then
+  self:spawn(c.type(c.x, c.y))
  end
 end
 
@@ -1719,12 +1717,12 @@ end
 
 -- a new day has dawned, update stuff
 function world:morning()
+ protagonist.score.days+=1
  for s,p in pairs(self.critterpop) do
-  self.critterpop[s]=min(p+1, 3)
+  self.critterpop[s]=min(p+(.7/protagonist.score.days), 3)
  end
  -- reset whether any tile has carrion
  self.carrion={}
- protagonist.score.days+=1
 end
 
 -- player has gone to sleep
@@ -1931,6 +1929,8 @@ function world:draw()
   p:draw(offset)
  end
  camera()
+
+ print(self.critterpop[self:screenkey()], 6, 120, 14)
 end
 
 --------------------------------
@@ -2306,7 +2306,7 @@ c300000063c30000000000006300a380a0b3b3a2b34040a2b3b3b3b3b340404040404030b3b3b3b3
 110000000011111111112020202011110000c1000000000000d4b10000c100e400b1000000000000c7d71111c10000000000b0e4c0e4c3b10060606060c0b0e4
 c3000000c3c3e4b0e4c0b0e4c3000080a1b392303040403030b392b3b3928181404040403092b392b3303030a1b392b3b3b3a2b3b3a1a1b3b3b3a29200c7d711
 11100000111111111111111111111111111111110000000011111111111111111111111111111111111111111100002110101010101010103120202020219010
-01000000010101010101010180101010303030404040404040303030303081814040404040303030304040403030303030303030303030303030301111111111
+01000000010101010101010101101010303030404040404040303030303081814040404040303030304040403030303030303030303030303030301111111111
 cccccccccccccccccccccccccc282282cc282cc22228222228282c282cc22c282cc222282c28228228822822822822882c222282cccccccccccccccccccccccc
 cccccccccccccccccccccccccc2882882c282c288882888882282c282c2882282c288882cc28228822822888282882282288882ccccccccccccccccccccccccc
 cccccccdddcccccccccccccccc2882882c288288222c28822c28822822882c288288222ccc2882282282288228228228288222ccccccccccccccccdddccccccc
