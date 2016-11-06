@@ -1903,7 +1903,6 @@ function world:draw()
  end
 
  camera()
- mapnight()
  -- draw water
  for wx=tb.l,tb.r-1 do
   for wy=tb.t,tb.b-1 do
@@ -1926,8 +1925,6 @@ function world:draw()
   p:draw(offset)
  end
  camera()
-
- print(self.critterpop[self:screenkey()], 6, 120, 14)
 end
 
 --------------------------------
@@ -2186,7 +2183,7 @@ function _draw()
  if (gotime and gotime>0) return
  if (gamestate==gs_init) drawsplash(); return
  movewater()
- world:draw{x=0, y=16}
+ world:draw()
  drawhud()
  if (gamestate==gs_sleep) drawsleep()
 end
