@@ -570,7 +570,7 @@ function actor:move()
   -- build master hit detection box
   --  (1 pixel wide slice just in advance of the hitbox)
   local try=self:hitbox()
-  if (dist>0) try[axis]+=self[dim]*8-1
+  if (dist>0) try[axis]+=try[dim]-1
   try[dim]=1
 
   function slidedir(c)
@@ -656,6 +656,7 @@ function actor:draw()
   self.flipped,
   self.upsidedown
  )
+ local b = self:hitbox()
 end
 
 function actor:eatparticles(rate)
@@ -709,7 +710,6 @@ fish = actor.subclass{
 
 function fish:init(...)
  actor.init(self, ...)
- self.y+=4
  self.anim=0
  self.vel.y=-self.jump
  self:splash()
@@ -762,13 +762,9 @@ function fish:move()
 end
 
 function fish:sprite()
- if self.pinned then
-  return self.sprites.pinned
- end
+ if (self.pinned) return self.sprites.pinned
  local s=self.sprites.jump
- if self.grounded then
-  s=self.sprites.flop
- end
+ if (self.grounded) s=self.sprites.flop
  if self.anim<self.animd then
   return s[1]
  else
